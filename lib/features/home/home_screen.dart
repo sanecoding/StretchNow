@@ -63,10 +63,10 @@ class HomeScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainerHighest
-                          .withOpacity(0.45),
+                          .withValues(alpha: 0.45),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: colorScheme.outlineVariant.withOpacity(0.4),
+                        color: colorScheme.outlineVariant.withValues(alpha: 0.4),
                       ),
                     ),
                     child: Column(
@@ -97,8 +97,8 @@ class HomeScreen extends StatelessWidget {
                                   horizontal: 14, vertical: 6),
                               decoration: BoxDecoration(
                                 color: progressPercent >= 1.0
-                                    ? const Color(0xFF22C55E).withOpacity(0.15)
-                                    : colorScheme.primary.withOpacity(0.1),
+                                    ? const Color(0xFF22C55E).withValues(alpha: 0.15)
+                                    : colorScheme.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(100),
                               ),
                               child: Text(
@@ -344,7 +344,7 @@ class _StretchCard extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
-                color: onContainerColor.withOpacity(0.1),
+                color: onContainerColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(100),
               ),
               child: Row(
@@ -371,21 +371,21 @@ class _StretchCard extends StatelessWidget {
             padding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
-              color: onContainerColor.withOpacity(0.08),
+              color: onContainerColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(100),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(stretch.bodyPart.icon,
-                    size: 14, color: onContainerColor.withOpacity(0.7)),
+                    size: 14, color: onContainerColor.withValues(alpha: 0.7)),
                 const SizedBox(width: 6),
                 Text(
                   stretch.bodyPart.label,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: onContainerColor.withOpacity(0.7),
+                    color: onContainerColor.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -412,7 +412,7 @@ class _StretchCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: onContainerColor.withOpacity(0.6),
+              color: onContainerColor.withValues(alpha: 0.6),
               height: 1.4,
             ),
           ),
@@ -430,7 +430,7 @@ class _StretchCard extends StatelessWidget {
                   value: viewModel.secondsRemaining / viewModel.totalDuration,
                   strokeWidth: 6,
                   strokeCap: StrokeCap.round,
-                  backgroundColor: onContainerColor.withOpacity(0.1),
+                  backgroundColor: onContainerColor.withValues(alpha: 0.1),
                   valueColor:
                       AlwaysStoppedAnimation<Color>(onContainerColor),
                 ),

@@ -78,10 +78,10 @@ class HistoryScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color:
-                        colorScheme.surfaceContainerHighest.withOpacity(0.45),
+                        colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: colorScheme.outlineVariant.withOpacity(0.4),
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.4),
                     ),
                   ),
                   child: Column(
@@ -158,11 +158,11 @@ class HistoryScreen extends StatelessWidget {
                           horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceContainerHighest
-                            .withOpacity(0.35),
+                            .withValues(alpha: 0.35),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                           color:
-                              colorScheme.outlineVariant.withOpacity(0.3),
+                              colorScheme.outlineVariant.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
@@ -172,7 +172,7 @@ class HistoryScreen extends StatelessWidget {
                             height: 36,
                             decoration: BoxDecoration(
                               color: isComplete
-                                  ? const Color(0xFF22C55E).withOpacity(0.15)
+                                  ? const Color(0xFF22C55E).withValues(alpha: 0.15)
                                   : colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -200,7 +200,7 @@ class HistoryScreen extends StatelessWidget {
                                 horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color: isComplete
-                                  ? const Color(0xFF22C55E).withOpacity(0.12)
+                                  ? const Color(0xFF22C55E).withValues(alpha: 0.12)
                                   : colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -251,10 +251,10 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.45),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outlineVariant.withOpacity(0.4),
+          color: colorScheme.outlineVariant.withValues(alpha: 0.4),
         ),
       ),
       child: Column(
@@ -322,7 +322,7 @@ class _WeekDayDot extends StatelessWidget {
                 value: progress > 0 ? progress : 0.0,
                 strokeWidth: 3,
                 strokeCap: StrokeCap.round,
-                backgroundColor: colorScheme.outlineVariant.withOpacity(0.3),
+                backgroundColor: colorScheme.outlineVariant.withValues(alpha: 0.3),
                 valueColor: AlwaysStoppedAnimation<Color>(dotColor),
               ),
             ),

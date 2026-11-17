@@ -58,7 +58,7 @@ class SettingsScreen extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 4),
                           decoration: BoxDecoration(
-                            color: colorScheme.primary.withOpacity(0.1),
+                            color: colorScheme.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(100),
                           ),
                           child: Text(
@@ -82,7 +82,7 @@ class SettingsScreen extends StatelessWidget {
                             const RoundSliderOverlayShape(overlayRadius: 16),
                         activeTrackColor: colorScheme.primary,
                         inactiveTrackColor:
-                            colorScheme.outlineVariant.withOpacity(0.3),
+                            colorScheme.outlineVariant.withValues(alpha: 0.3),
                         thumbColor: colorScheme.primary,
                       ),
                       child: Slider(
@@ -125,7 +125,7 @@ class SettingsScreen extends StatelessWidget {
                         height: 1,
                         indent: 56,
                         color:
-                            colorScheme.outlineVariant.withOpacity(0.3)),
+                            colorScheme.outlineVariant.withValues(alpha: 0.3)),
                     _SwitchTile(
                       icon: Icons.vibration_outlined,
                       iconColor: colorScheme.secondary,
@@ -160,7 +160,7 @@ class SettingsScreen extends StatelessWidget {
                         height: 1,
                         indent: 56,
                         color:
-                            colorScheme.outlineVariant.withOpacity(0.3)),
+                            colorScheme.outlineVariant.withValues(alpha: 0.3)),
                     _ThemeTile(
                       title: 'Light',
                       icon: Icons.light_mode_outlined,
@@ -172,7 +172,7 @@ class SettingsScreen extends StatelessWidget {
                         height: 1,
                         indent: 56,
                         color:
-                            colorScheme.outlineVariant.withOpacity(0.3)),
+                            colorScheme.outlineVariant.withValues(alpha: 0.3)),
                     _ThemeTile(
                       title: 'Dark',
                       icon: Icons.dark_mode_outlined,
@@ -207,7 +207,7 @@ class SettingsScreen extends StatelessWidget {
                         height: 1,
                         indent: 56,
                         color:
-                            colorScheme.outlineVariant.withOpacity(0.3)),
+                            colorScheme.outlineVariant.withValues(alpha: 0.3)),
                     _ActionTile(
                       icon: Icons.shield_outlined,
                       iconColor: const Color(0xFF22C55E),
@@ -222,7 +222,7 @@ class SettingsScreen extends StatelessWidget {
                         height: 1,
                         indent: 56,
                         color:
-                            colorScheme.outlineVariant.withOpacity(0.3)),
+                            colorScheme.outlineVariant.withValues(alpha: 0.3)),
                     _ActionTile(
                       icon: Icons.delete_outline_rounded,
                       iconColor: colorScheme.error,
@@ -267,10 +267,10 @@ class SettingsScreen extends StatelessWidget {
 
   BoxDecoration _cardDecoration(ColorScheme colorScheme) {
     return BoxDecoration(
-      color: colorScheme.surfaceContainerHighest.withOpacity(0.45),
+      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
       borderRadius: BorderRadius.circular(20),
       border: Border.all(
-        color: colorScheme.outlineVariant.withOpacity(0.4),
+        color: colorScheme.outlineVariant.withValues(alpha: 0.4),
       ),
     );
   }
@@ -377,7 +377,7 @@ class _SwitchTile extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.12),
+          color: iconColor.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: iconColor, size: 18),
@@ -414,7 +414,7 @@ class _ThemeTile extends StatelessWidget {
         height: 36,
         decoration: BoxDecoration(
           color: (isSelected ? colorScheme.primary : colorScheme.outline)
-              .withOpacity(0.12),
+              .withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(
@@ -461,7 +461,7 @@ class _ActionTile extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.12),
+          color: iconColor.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: iconColor, size: 18),

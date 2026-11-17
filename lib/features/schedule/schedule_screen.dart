@@ -60,10 +60,10 @@ class ScheduleScreen extends StatelessWidget {
               Container(
                 decoration: BoxDecoration(
                   color:
-                      colorScheme.surfaceContainerHighest.withOpacity(0.45),
+                      colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: colorScheme.outlineVariant.withOpacity(0.4),
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.4),
                   ),
                 ),
                 child: RadioGroup<int>(
@@ -79,7 +79,7 @@ class ScheduleScreen extends StatelessWidget {
                       ),
                       Divider(
                           height: 1,
-                          color: colorScheme.outlineVariant.withOpacity(0.3)),
+                          color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
                       _IntervalTile(
                         title: 'Every 2 hours',
                         subtitle: 'Recommended',
@@ -88,7 +88,7 @@ class ScheduleScreen extends StatelessWidget {
                       ),
                       Divider(
                           height: 1,
-                          color: colorScheme.outlineVariant.withOpacity(0.3)),
+                          color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
                       _IntervalTile(
                         title: 'Every 3 hours',
                         subtitle: 'Moderate',
@@ -97,7 +97,7 @@ class ScheduleScreen extends StatelessWidget {
                       ),
                       Divider(
                           height: 1,
-                          color: colorScheme.outlineVariant.withOpacity(0.3)),
+                          color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
                       _IntervalTile(
                         title: 'Every 4 hours',
                         subtitle: 'Minimal',
@@ -131,10 +131,10 @@ class ScheduleScreen extends StatelessWidget {
               Container(
                 decoration: BoxDecoration(
                   color:
-                      colorScheme.surfaceContainerHighest.withOpacity(0.45),
+                      colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: colorScheme.outlineVariant.withOpacity(0.4),
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.4),
                   ),
                 ),
                 child: Column(
@@ -154,7 +154,7 @@ class ScheduleScreen extends StatelessWidget {
                         height: 1,
                         indent: 56,
                         color:
-                            colorScheme.outlineVariant.withOpacity(0.3)),
+                            colorScheme.outlineVariant.withValues(alpha: 0.3)),
                     _TimeTile(
                       icon: Icons.nightlight_round_outlined,
                       iconColor: const Color(0xFF6366F1),
@@ -249,7 +249,7 @@ class _TimeTile extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.12),
+          color: iconColor.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: iconColor, size: 18),

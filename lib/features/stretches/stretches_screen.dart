@@ -165,7 +165,7 @@ class StretchesScreen extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
-                color: accentColor.withOpacity(0.12),
+                color: accentColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(100),
               ),
               child: Row(
@@ -224,7 +224,7 @@ class StretchesScreen extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
@@ -336,10 +336,10 @@ class _StretchCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withOpacity(0.4),
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: colorScheme.outlineVariant.withOpacity(0.5),
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
           ),
         ),
         child: Column(
@@ -352,7 +352,7 @@ class _StretchCard extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.12),
+                    color: accentColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(

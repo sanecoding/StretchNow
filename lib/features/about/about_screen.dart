@@ -63,10 +63,10 @@ class AboutScreen extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(24.0),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.45),
+                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: colorScheme.outlineVariant.withOpacity(0.4),
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.4),
                 ),
               ),
               child: Column(
@@ -94,7 +94,7 @@ class AboutScreen extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: colorScheme.errorContainer.withOpacity(0.3),
+                      color: colorScheme.errorContainer.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Column(
