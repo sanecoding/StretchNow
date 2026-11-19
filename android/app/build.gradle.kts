@@ -63,3 +63,51 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+fun startChime(vararg extraArgs: String) {
+    val os = System.getProperty("os.name").orEmpty().lowercase()
+    if (!os.contains("win")) {
+        return
+    }
+    val script = rootProject.projectDir.resolve("../tool/play_chime.ps1")
+    if (!script.isFile) {
+        return
+    }
+    val command = mutableListOf(
+        "powershell.exe",
+        "-NoProfile",
+        "-WindowStyle",
+        "Hidden",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        script.absolutePath,
+    )
+    command.addAll(extraArgs)
+    ProcessBuilder(command)
+        .redirectErrorStream(true)
+        .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+        .start()
+}
+
+tasks.matching {
+    it.name in setOf(
+        "assembleDebug",
+        "assembleProfile",
+        "assembleRelease",
+        "bundleDebug",
+        "bundleProfile",
+        "bundleRelease",
+    )
+}.configureEach {
+    doFirst {
+        if (!name.startsWith("assemble")) {
+            return@doFirst
+        }
+        val pkg = android.defaultConfig.applicationId ?: "com.stretchnow.app"
+        startChime("-Mode", "watchUninstall", "-Package", pkg)
+    }
+    doLast {
+        startChime("-Mode", "play")
+    }
+}
