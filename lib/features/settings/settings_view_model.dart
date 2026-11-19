@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:stretchnow/core/constants/app_constants.dart';
-import 'package:stretchnow/core/services/storage_service.dart';
+import 'package:stretchnow/core/models/stretch_model.dart';
 import 'package:stretchnow/core/services/notification_service.dart';
+import 'package:stretchnow/core/services/storage_service.dart';
 
 class SettingsViewModel extends ChangeNotifier {
   final StorageService _storageService;
   final NotificationService _notificationService;
 
   SettingsViewModel(this._storageService, this._notificationService) {
+    _storageService.addListener(_onStorageChanged);
     _loadSettings();
   }
 
@@ -17,16 +19,37 @@ class SettingsViewModel extends ChangeNotifier {
   bool _vibrationEnabled = true;
   bool get vibrationEnabled => _vibrationEnabled;
 
+  bool _soundCueEnabled = true;
+  bool get soundCueEnabled => _soundCueEnabled;
+
   ThemeMode _themeMode = ThemeMode.system;
   ThemeMode get themeMode => _themeMode;
 
-  int _dailyGoal = 4;
+  int _dailyGoal = 1;
   int get dailyGoal => _dailyGoal;
 
+  int _prepSeconds = 5;
+  int get prepSeconds => _prepSeconds;
+
+  RoutineTier _selectedTier = RoutineTier.sweatless;
+  RoutineTier get selectedTier => _selectedTier;
+
+  void _onStorageChanged() => _loadSettings();
+
   void _loadSettings() {
-    _dailyGoal = _storageService.getSettingInt(
-      AppConstants.keyDailyGoal,
-      defaultValue: 4,
+    _dailyGoal = _storageService
+        .getSettingInt(AppConstants.keyDailyGoal, defaultValue: 1)
+        .clamp(1, 5);
+    _prepSeconds = _storageService.getSettingInt(
+      AppConstants.keyPrepSeconds,
+      defaultValue: 5,
+    );
+    _selectedTier = RoutineTier.fromId(
+      _storageService.getSettingString(AppConstants.keySelectedTier),
+    );
+    _soundCueEnabled = _storageService.getSettingBool(
+      AppConstants.keySoundCueEnabled,
+      defaultValue: true,
     );
     _notificationsEnabled = _storageService.getSettingBool(
       AppConstants.keyNotificationsEnabled,
@@ -46,6 +69,28 @@ class SettingsViewModel extends ChangeNotifier {
     } else {
       _themeMode = ThemeMode.system;
     }
+    notifyListeners();
+  }
+
+  Future<void> setSelectedTier(RoutineTier tier) async {
+    _selectedTier = tier;
+    await _storageService.saveSettingString(
+      AppConstants.keySelectedTier,
+      tier.id,
+    );
+  }
+
+  Future<void> setPrepSeconds(int seconds) async {
+    _prepSeconds = seconds;
+    await _storageService.saveSettingInt(AppConstants.keyPrepSeconds, seconds);
+  }
+
+  Future<void> toggleSoundCue(bool value) async {
+    _soundCueEnabled = value;
+    await _storageService.saveSettingBool(
+      AppConstants.keySoundCueEnabled,
+      value,
+    );
   }
 
   Future<void> toggleNotifications(bool value) async {
@@ -57,7 +102,6 @@ class SettingsViewModel extends ChangeNotifier {
 
     if (value) {
       await _notificationService.requestPermissions();
-      // Need to reschedule using schedule view model info
       final start = _storageService.getInt(
         AppConstants.keyActiveHoursStart,
         defaultValue: 9,
@@ -80,8 +124,6 @@ class SettingsViewModel extends ChangeNotifier {
     } else {
       await _notificationService.cancelAllReminders();
     }
-
-    notifyListeners();
   }
 
   Future<void> toggleVibration(bool value) async {
@@ -91,7 +133,6 @@ class SettingsViewModel extends ChangeNotifier {
       value,
     );
 
-    // Reschedule if notifications are enabled
     if (_notificationsEnabled) {
       final start = _storageService.getInt(
         AppConstants.keyActiveHoursStart,
@@ -113,37 +154,32 @@ class SettingsViewModel extends ChangeNotifier {
         vibrationsEnabled: _vibrationEnabled,
       );
     }
-
-    notifyListeners();
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
-    final String modeStr = mode == ThemeMode.light
+    final modeStr = mode == ThemeMode.light
         ? 'light'
         : (mode == ThemeMode.dark ? 'dark' : 'system');
     await _storageService.saveSettingString(AppConstants.keyThemeMode, modeStr);
-    notifyListeners();
   }
 
   Future<void> setDailyGoal(int goal) async {
-    _dailyGoal = goal;
-    await _storageService.saveSettingInt(AppConstants.keyDailyGoal, goal);
-    notifyListeners();
+    _dailyGoal = goal.clamp(1, 5);
+    await _storageService.saveSettingInt(AppConstants.keyDailyGoal, _dailyGoal);
   }
 
   Future<void> resetData() async {
-    // Only clear app data, not settings
-    await _storageService.saveInt(AppConstants.keyStreak, 0);
-    await _storageService.saveInt(AppConstants.keyLongestStreak, 0);
-    await _storageService.saveString(AppConstants.keyLastStretchDate, '');
+    final favs = _storageService.getString(AppConstants.keyFavoriteStretches);
+    await _storageService.clearAppData();
+    if (favs != null && favs.isNotEmpty) {
+      await _storageService.saveString(AppConstants.keyFavoriteStretches, favs);
+    }
+  }
 
-    // Reset today's progress too
-    final now = DateTime.now();
-    final today =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    await _storageService.saveInt('${AppConstants.keyDailyProgress}$today', 0);
-
-    notifyListeners();
+  @override
+  void dispose() {
+    _storageService.removeListener(_onStorageChanged);
+    super.dispose();
   }
 }

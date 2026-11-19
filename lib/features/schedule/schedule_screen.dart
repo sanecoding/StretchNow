@@ -15,7 +15,10 @@ class ScheduleScreen extends StatelessWidget {
       backgroundColor: colorScheme.surface,
       body: Consumer<ScheduleViewModel>(
         builder: (context, viewModel, child) {
-          return ListView(
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 640),
+              child: ListView(
             padding: const EdgeInsets.all(24.0),
             children: [
               SafeArea(
@@ -57,15 +60,16 @@ class ScheduleScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Container(
-                decoration: BoxDecoration(
-                  color:
-                      colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+              Material(
+                color:
+                    colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
+                  side: BorderSide(
                     color: colorScheme.outlineVariant.withValues(alpha: 0.4),
                   ),
                 ),
+                clipBehavior: Clip.antiAlias,
                 child: RadioGroup<int>(
                   groupValue: viewModel.intervalHours,
                   onChanged: (val) => viewModel.updateInterval(val!),
@@ -128,15 +132,16 @@ class ScheduleScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Container(
-                decoration: BoxDecoration(
-                  color:
-                      colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+              Material(
+                color:
+                    colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
+                  side: BorderSide(
                     color: colorScheme.outlineVariant.withValues(alpha: 0.4),
                   ),
                 ),
+                clipBehavior: Clip.antiAlias,
                 child: Column(
                   children: [
                     _TimeTile(
@@ -172,6 +177,8 @@ class ScheduleScreen extends StatelessWidget {
 
               const SizedBox(height: 80),
             ],
+          ),
+          ),
           );
         },
       ),

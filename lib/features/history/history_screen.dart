@@ -14,214 +14,247 @@ class HistoryScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: Consumer<HistoryViewModel>(
-        builder: (context, viewModel, child) {
+        builder: (context, viewModel, _) {
           final weekDays = viewModel.lastSevenDays;
 
-          return RefreshIndicator(
-            onRefresh: () async => viewModel.loadHistoryData(),
-            child: ListView(
-              padding: const EdgeInsets.all(24.0),
-              children: [
-                SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 4, bottom: 4),
-                    child: Text(
-                      'History',
-                      style: GoogleFonts.outfit(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Stats row
-                Row(
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 640),
+              child: RefreshIndicator(
+                onRefresh: () async => viewModel.loadHistoryData(),
+                child: ListView(
+                  padding: const EdgeInsets.all(24.0),
                   children: [
-                    Expanded(
-                      child: _StatCard(
-                        label: 'Current\nStreak',
-                        value: '${viewModel.currentStreak}',
-                        icon: Icons.local_fire_department_rounded,
-                        iconColor: const Color(0xFFEA580C),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _StatCard(
-                        label: 'Longest\nStreak',
-                        value: '${viewModel.longestStreak}',
-                        icon: Icons.emoji_events_rounded,
-                        iconColor: const Color(0xFFF59E0B),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _StatCard(
-                        label: 'Total\nStretches',
-                        value: '${viewModel.totalStretches}',
-                        icon: Icons.fitness_center_rounded,
-                        iconColor: const Color(0xFF8B5CF6),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 28),
-
-                // Week at a glance
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color:
-                        colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'This Week',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                    SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 4, bottom: 4),
+                        child: Text(
+                          'History',
+                          style: GoogleFonts.outfit(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 18),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: weekDays.map((entry) {
-                          final progress = entry.goal > 0
-                              ? (entry.completed / entry.goal).clamp(0.0, 1.0)
-                              : 0.0;
-                          final isToday =
-                              viewModel.formatDisplayDate(entry.date) ==
-                                  'Today';
-                          return _WeekDayDot(
-                            dayLabel:
-                                viewModel.formatShortDay(entry.date),
-                            progress: progress,
-                            isToday: isToday,
-                            count: entry.completed,
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 28),
-
-                Text(
-                  'Recent Activity',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                if (viewModel.historyEntries.isEmpty)
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32.0),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.self_improvement_outlined,
-                            size: 48,
-                            color: colorScheme.outlineVariant,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No stretching history yet.\nComplete a stretch to get started!',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
-                  )
-                else
-                  ...viewModel.historyEntries.map((entry) {
-                    final isComplete = entry.completed >= entry.goal;
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
+
+                    const SizedBox(height: 24),
+
+                    // Stats row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _StatCard(
+                            label: 'Current\nStreak',
+                            value: '${viewModel.currentStreak}',
+                            icon: Icons.local_fire_department_rounded,
+                            iconColor: const Color(0xFFEA580C),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _StatCard(
+                            label: 'Longest\nStreak',
+                            value: '${viewModel.longestStreak}',
+                            icon: Icons.emoji_events_rounded,
+                            iconColor: const Color(0xFFF59E0B),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _StatCard(
+                            label: 'Routines\nDone',
+                            value: '${viewModel.totalRoutines}',
+                            icon: Icons.fitness_center_rounded,
+                            iconColor: const Color(0xFF8B5CF6),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // Week at a glance
+                    Container(
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(14),
+                            .withValues(alpha: 0.45),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color:
-                              colorScheme.outlineVariant.withValues(alpha: 0.3),
+                              colorScheme.outlineVariant.withValues(alpha: 0.4),
                         ),
                       ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: isComplete
-                                  ? const Color(0xFF22C55E).withValues(alpha: 0.15)
-                                  : colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              isComplete
-                                  ? Icons.check_rounded
-                                  : Icons.radio_button_unchecked,
-                              color: isComplete
-                                  ? const Color(0xFF22C55E)
-                                  : colorScheme.outline,
-                              size: 18,
+                          Text(
+                            'This Week',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Text(
-                              viewModel.formatDisplayDate(entry.date),
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: isComplete
-                                  ? const Color(0xFF22C55E).withValues(alpha: 0.12)
-                                  : colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              '${entry.completed}/${entry.goal}',
-                              style: TextStyle(
-                                color: isComplete
-                                    ? const Color(0xFF22C55E)
-                                    : colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
-                            ),
+                          const SizedBox(height: 18),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: weekDays.map((entry) {
+                              final progress = entry.goal > 0
+                                  ? (entry.completed / entry.goal)
+                                      .clamp(0.0, 1.0)
+                                  : 0.0;
+                              final isToday =
+                                  viewModel.formatDisplayDate(entry.date) ==
+                                      'Today';
+                              return _WeekDayDot(
+                                dayLabel:
+                                    viewModel.formatShortDay(entry.date),
+                                progress: progress,
+                                isToday: isToday,
+                                count: entry.completed,
+                              );
+                            }).toList(),
                           ),
                         ],
                       ),
-                    );
-                  }),
+                    ),
 
-                const SizedBox(height: 80),
-              ],
+                    const SizedBox(height: 28),
+
+                    Text(
+                      'Recent Activity',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    if (viewModel.historyEntries.isEmpty)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32.0),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.self_improvement_outlined,
+                                size: 48,
+                                color: colorScheme.outlineVariant,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No routine history yet.\nStart the full-body routine to log your first day!',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      ...viewModel.historyEntries.map((entry) {
+                        final isComplete = entry.completed >= entry.goal;
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest
+                                .withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: colorScheme.outlineVariant
+                                  .withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: isComplete
+                                      ? const Color(0xFF22C55E)
+                                          .withValues(alpha: 0.15)
+                                      : colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  isComplete
+                                      ? Icons.check_rounded
+                                      : Icons.radio_button_unchecked,
+                                  color: isComplete
+                                      ? const Color(0xFF22C55E)
+                                      : colorScheme.outline,
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      viewModel.formatDisplayDate(entry.date),
+                                      style: theme.textTheme.bodyLarge
+                                          ?.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    if (entry.exercisesDone > 0 ||
+                                        entry.tierLabel != null)
+                                      Text(
+                                        [
+                                          if (entry.tierLabel != null)
+                                            entry.tierLabel!,
+                                          if (entry.exercisesDone > 0)
+                                            '${entry.exercisesDone}/12 moves',
+                                        ].join(' · '),
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isComplete
+                                      ? const Color(0xFF22C55E)
+                                          .withValues(alpha: 0.12)
+                                      : colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '${entry.completed}/${entry.goal}',
+                                  style: TextStyle(
+                                    color: isComplete
+                                        ? const Color(0xFF22C55E)
+                                        : colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+
+                    const SizedBox(height: 80),
+                  ],
+                ),
+              ),
             ),
           );
         },
@@ -322,7 +355,8 @@ class _WeekDayDot extends StatelessWidget {
                 value: progress > 0 ? progress : 0.0,
                 strokeWidth: 3,
                 strokeCap: StrokeCap.round,
-                backgroundColor: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                backgroundColor:
+                    colorScheme.outlineVariant.withValues(alpha: 0.3),
                 valueColor: AlwaysStoppedAnimation<Color>(dotColor),
               ),
             ),
@@ -347,7 +381,8 @@ class _WeekDayDot extends StatelessWidget {
           style: TextStyle(
             fontSize: 11,
             fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
-            color: isToday ? colorScheme.primary : colorScheme.onSurfaceVariant,
+            color:
+                isToday ? colorScheme.primary : colorScheme.onSurfaceVariant,
           ),
         ),
       ],

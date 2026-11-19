@@ -2,19 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:stretchnow/core/models/stretch_model.dart';
+import 'package:stretchnow/core/widgets/exercise_detail_sheet.dart';
+import 'package:stretchnow/core/widgets/exercise_motion_player.dart';
+import 'package:stretchnow/features/routine/routine_player_screen.dart';
 import 'package:stretchnow/features/stretches/stretches_view_model.dart';
 
 class StretchesScreen extends StatelessWidget {
   const StretchesScreen({super.key});
-
-  static const Map<BodyPart, Color> _bodyPartColors = {
-    BodyPart.neck: Color(0xFF3B82F6),
-    BodyPart.shoulders: Color(0xFF14B8A6),
-    BodyPart.back: Color(0xFF6366F1),
-    BodyPart.wrists: Color(0xFF8B5CF6),
-    BodyPart.legs: Color(0xFF22C55E),
-    BodyPart.fullBody: Color(0xFFF59E0B),
-  };
 
   @override
   Widget build(BuildContext context) {
@@ -24,243 +18,177 @@ class StretchesScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: SafeArea(
-        child: Consumer<StretchesViewModel>(
-          builder: (context, viewModel, child) {
-            final stretches = viewModel.filteredStretches;
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: Consumer<StretchesViewModel>(
+              builder: (context, viewModel, _) {
+                final exercises = viewModel.filteredExercises;
+                final activeTier = viewModel.selectedTier;
 
-            return CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Stretch Library',
-                          style: GoogleFonts.outfit(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${StretchExercise.catalog.length} stretches across ${BodyPart.values.length} categories',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Category filter chips
-                SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: 42,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      children: [
-                        _FilterChip(
-                          label: 'All',
-                          isSelected: viewModel.selectedBodyPart == null,
-                          onTap: () => viewModel.selectBodyPart(null),
-                          color: colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        ...BodyPart.values.map((part) => Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: _FilterChip(
-                                label: part.label,
-                                isSelected:
-                                    viewModel.selectedBodyPart == part,
-                                onTap: () => viewModel.selectBodyPart(part),
-                                color: _bodyPartColors[part] ??
-                                    colorScheme.primary,
+                return CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Exercise Motions',
+                              style: GoogleFonts.outfit(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.onSurface,
                               ),
-                            )),
-                      ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'All 12 full-body routine moves · ${activeTier.label} targets shown',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
 
-                const SliverToBoxAdapter(child: SizedBox(height: 20)),
-
-                // Stretch grid
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  sliver: SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 0.82,
+                    // Block & Favorites filter chips
+                    SliverToBoxAdapter(
+                      child: SizedBox(
+                        height: 40,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          children: [
+                            _FilterChip(
+                              label: 'All (12)',
+                              isSelected: viewModel.selectedBlock == null &&
+                                  !viewModel.favoritesOnly,
+                              onTap: viewModel.selectAll,
+                              color: colorScheme.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            ...RoutineBlock.values.map(
+                              (block) => Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: _FilterChip(
+                                  label: block.title,
+                                  isSelected: !viewModel.favoritesOnly &&
+                                      viewModel.selectedBlock == block,
+                                  onTap: () => viewModel.selectBlock(block),
+                                  color: block.accentColor,
+                                ),
+                              ),
+                            ),
+                            _FilterChip(
+                              label: 'Favorites',
+                              isSelected: viewModel.favoritesOnly,
+                              onTap: viewModel.selectFavoritesOnly,
+                              color: Colors.redAccent,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final stretch = stretches[index];
-                        final accentColor =
-                            _bodyPartColors[stretch.bodyPart] ??
-                                colorScheme.primary;
-                        return _StretchCard(
-                          stretch: stretch,
-                          accentColor: accentColor,
-                          isFavorite: viewModel.isFavorite(stretch.id),
-                          onFavoriteTap: () =>
-                              viewModel.toggleFavorite(stretch.id),
-                          onTap: () => _showStretchDetail(
-                              context, stretch, accentColor, viewModel),
-                        );
-                      },
-                      childCount: stretches.length,
-                    ),
-                  ),
-                ),
 
-                const SliverToBoxAdapter(child: SizedBox(height: 100)),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
+                    const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-  void _showStretchDetail(BuildContext context, StretchExercise stretch,
-      Color accentColor, StretchesViewModel viewModel) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isFav = viewModel.isFavorite(stretch.id);
+                    if (exercises.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.favorite_border_rounded,
+                                  size: 48,
+                                  color: colorScheme.outlineVariant,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'No favorite moves yet.\nTap the heart on any exercise to pin it here.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        sliver: SliverGrid(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            childAspectRatio: 0.72,
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final ex = exercises[index];
+                              return _ExerciseMotionCard(
+                                exercise: ex,
+                                activeTier: activeTier,
+                                isFavorite: viewModel.isFavorite(ex.id),
+                                onFavoriteTap: () =>
+                                    viewModel.toggleFavorite(ex.id),
+                                onTap: () => showExerciseDetailSheet(
+                                  context: context,
+                                  exercise: ex,
+                                  activeTier: activeTier,
+                                  isFavorite: viewModel.isFavorite(ex.id),
+                                  onToggleFavorite: () =>
+                                      viewModel.toggleFavorite(ex.id),
+                                  onPlaySingle: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => RoutinePlayerScreen(
+                                          exercises: [ex],
+                                          initialIndex: 0,
+                                          tier: activeTier,
+                                          sessionTitle: ex.name,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  onStartFromHere: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => RoutinePlayerScreen(
+                                          exercises: StretchExercise.routine,
+                                          initialIndex: ex.number - 1,
+                                          tier: activeTier,
+                                          sessionTitle:
+                                              'Lazy Full Body Routine',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                            childCount: exercises.length,
+                          ),
+                        ),
+                      ),
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        padding: const EdgeInsets.fromLTRB(28, 12, 28, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: colorScheme.outlineVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                  ],
+                );
+              },
             ),
-            const SizedBox(height: 28),
-
-            // Body part badge
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(100),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(stretch.bodyPart.icon,
-                      size: 16, color: accentColor),
-                  const SizedBox(width: 6),
-                  Text(
-                    stretch.bodyPart.label,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: accentColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            Text(
-              stretch.name,
-              style: GoogleFonts.outfit(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            const SizedBox(height: 20),
-
-            // Duration + Difficulty row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _DetailChip(
-                  icon: Icons.timer_outlined,
-                  label: '${stretch.durationSeconds}s',
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 16),
-                _DetailChip(
-                  icon: Icons.speed_outlined,
-                  label: stretch.difficulty.label,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                stretch.description,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurface,
-                  height: 1.6,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-
-            const SizedBox(height: 28),
-
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: () {
-                  viewModel.toggleFavorite(stretch.id);
-                  Navigator.pop(context);
-                },
-                icon: Icon(isFav ? Icons.favorite : Icons.favorite_border),
-                label: Text(isFav
-                    ? 'Remove from Favorites'
-                    : 'Add to Favorites'),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor:
-                      isFav ? colorScheme.error : accentColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -287,8 +215,8 @@ class _FilterChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? color : Colors.transparent,
           borderRadius: BorderRadius.circular(100),
@@ -301,9 +229,7 @@ class _FilterChip extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: isSelected
-                ? Colors.white
-                : colorScheme.onSurfaceVariant,
+            color: isSelected ? Colors.white : colorScheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -311,16 +237,16 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-class _StretchCard extends StatelessWidget {
-  final StretchExercise stretch;
-  final Color accentColor;
+class _ExerciseMotionCard extends StatelessWidget {
+  final StretchExercise exercise;
+  final RoutineTier activeTier;
   final bool isFavorite;
   final VoidCallback onFavoriteTap;
   final VoidCallback onTap;
 
-  const _StretchCard({
-    required this.stretch,
-    required this.accentColor,
+  const _ExerciseMotionCard({
+    required this.exercise,
+    required this.activeTier,
     required this.isFavorite,
     required this.onFavoriteTap,
     required this.onTap,
@@ -330,16 +256,18 @@ class _StretchCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final presc = exercise.forTier(activeTier);
+    final accent = exercise.block.accentColor;
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+            color: colorScheme.outlineVariant.withValues(alpha: 0.45),
           ),
         ),
         child: Column(
@@ -349,16 +277,21 @@ class _StretchCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
                   ),
-                  child: Icon(
-                    stretch.bodyPart.icon,
-                    color: accentColor,
-                    size: 20,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '#${exercise.number.toString().padLeft(2, '0')}',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: accent,
+                    ),
                   ),
                 ),
                 GestureDetector(
@@ -366,14 +299,26 @@ class _StretchCard extends StatelessWidget {
                   child: Icon(
                     isFavorite ? Icons.favorite : Icons.favorite_border,
                     color: isFavorite ? Colors.redAccent : colorScheme.outline,
-                    size: 22,
+                    size: 20,
                   ),
                 ),
               ],
             ),
-            const Spacer(),
+            const SizedBox(height: 8),
+            Expanded(
+              child: ExerciseMotionPlayer(
+                exercise: exercise,
+                cueOverride: exercise.previewCueFor(activeTier),
+                isPlaying: true,
+                isPreview: true,
+                compact: true,
+                primaryColor: activeTier.accentColor,
+                height: double.infinity,
+              ),
+            ),
+            const SizedBox(height: 10),
             Text(
-              stretch.name,
+              exercise.name,
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
@@ -382,102 +327,34 @@ class _StretchCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
-            Text(
-              stretch.bodyPart.label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: accentColor,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.timer_outlined,
-                    size: 14, color: colorScheme.onSurfaceVariant),
-                const SizedBox(width: 4),
-                Text(
-                  '${stretch.durationSeconds}s',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+                Expanded(
+                  child: Text(
+                    exercise.focusArea,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: accent,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 10),
-                _DifficultyDot(difficulty: stretch.difficulty),
+                const SizedBox(width: 4),
+                Text(
+                  presc.targetSummary,
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: activeTier.accentColor,
+                  ),
+                ),
               ],
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _DifficultyDot extends StatelessWidget {
-  final Difficulty difficulty;
-  const _DifficultyDot({required this.difficulty});
-
-  @override
-  Widget build(BuildContext context) {
-    final Color color;
-    switch (difficulty) {
-      case Difficulty.easy:
-        color = const Color(0xFF22C55E);
-      case Difficulty.medium:
-        color = const Color(0xFFF59E0B);
-      case Difficulty.hard:
-        color = const Color(0xFFEF4444);
-    }
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          difficulty.label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-        ),
-      ],
-    );
-  }
-}
-
-class _DetailChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  const _DetailChip({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: color,
-          ),
-        ),
-      ],
     );
   }
 }

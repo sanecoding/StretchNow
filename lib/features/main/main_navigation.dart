@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:stretchnow/features/home/home_screen.dart';
-import 'package:stretchnow/features/stretches/stretches_screen.dart';
-import 'package:stretchnow/features/schedule/schedule_screen.dart';
 import 'package:stretchnow/features/history/history_screen.dart';
+import 'package:stretchnow/features/home/home_screen.dart';
+import 'package:stretchnow/features/schedule/schedule_screen.dart';
 import 'package:stretchnow/features/settings/settings_screen.dart';
+import 'package:stretchnow/features/stretches/stretches_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -26,7 +26,16 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _screens),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          for (var i = 0; i < _screens.length; i++)
+            TickerMode(
+              enabled: _currentIndex == i,
+              child: _screens[i],
+            ),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
@@ -38,12 +47,12 @@ class _MainScreenState extends State<MainScreen> {
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
+            label: 'Routine',
           ),
           NavigationDestination(
             icon: Icon(Icons.self_improvement_outlined),
             selectedIcon: Icon(Icons.self_improvement),
-            label: 'Stretches',
+            label: 'Motions',
           ),
           NavigationDestination(
             icon: Icon(Icons.schedule_outlined),
