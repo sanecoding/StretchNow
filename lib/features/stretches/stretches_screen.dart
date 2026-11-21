@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:stretchnow/core/models/stretch_model.dart';
 import 'package:stretchnow/core/widgets/exercise_detail_sheet.dart';
 import 'package:stretchnow/core/widgets/exercise_motion_player.dart';
+import 'package:stretchnow/core/widgets/routine_tier_selector.dart';
 import 'package:stretchnow/features/routine/routine_player_screen.dart';
 import 'package:stretchnow/features/stretches/stretches_view_model.dart';
 
@@ -49,7 +50,12 @@ class StretchesScreen extends StatelessWidget {
                                 color: colorScheme.onSurfaceVariant,
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 12),
+                            RoutineTierSelector(
+                              selectedTier: activeTier,
+                              onSelect: viewModel.selectTier,
+                            ),
+                            const SizedBox(height: 12),
                           ],
                         ),
                       ),
@@ -150,25 +156,26 @@ class StretchesScreen extends StatelessWidget {
                                   isFavorite: viewModel.isFavorite(ex.id),
                                   onToggleFavorite: () =>
                                       viewModel.toggleFavorite(ex.id),
-                                  onPlaySingle: () {
+                                  onSelectTier: viewModel.selectTier,
+                                  onPlaySingle: (tier) {
                                     Navigator.of(context).push(
                                       MaterialPageRoute(
                                         builder: (_) => RoutinePlayerScreen(
                                           exercises: [ex],
                                           initialIndex: 0,
-                                          tier: activeTier,
+                                          tier: tier,
                                           sessionTitle: ex.name,
                                         ),
                                       ),
                                     );
                                   },
-                                  onStartFromHere: () {
+                                  onStartFromHere: (tier) {
                                     Navigator.of(context).push(
                                       MaterialPageRoute(
                                         builder: (_) => RoutinePlayerScreen(
                                           exercises: StretchExercise.routine,
                                           initialIndex: ex.number - 1,
-                                          tier: activeTier,
+                                          tier: tier,
                                           sessionTitle:
                                               'Lazy Full Body Routine',
                                         ),

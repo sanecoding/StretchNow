@@ -183,4 +183,112 @@ void main() {
       homeVm.dispose();
     },
   );
+
+  testWidgets(
+    'Motions tier options are clickable, detail sheet tier tiles update tier, and Push-Ups shows Standard first',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      // Model contract: Push-Ups defaults to Standard across all tiers
+      final pushUps = StretchExercise.findById('push_ups')!;
+      expect(pushUps.previewOptions.first.label, 'Standard');
+      for (final tier in RoutineTier.values) {
+        expect(pushUps.previewCueFor(tier), MotionCue.pushupStandard);
+      }
+
+      await tester.pumpWidget(
+        StretchNowRoot(
+          storageService: StorageService.inMemory(),
+          notificationService: NotificationService(),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 120));
+
+      await tester.tap(find.text('Motions'));
+      await tester.pump(const Duration(milliseconds: 150));
+
+      expect(
+        find.text('All 12 full-body routine moves · Sweatless targets shown'),
+        findsOneWidget,
+      );
+      expect(find.text('5 / shape'), findsWidgets);
+
+      await tester.tap(find.text('Halfway'));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(
+        find.text('All 12 full-body routine moves · Halfway targets shown'),
+        findsOneWidget,
+      );
+      expect(find.text('3 / shape'), findsWidgets);
+
+      await tester.tap(find.text('Sweaty'));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(
+        find.text('All 12 full-body routine moves · Sweaty targets shown'),
+        findsOneWidget,
+      );
+      expect(find.text('8 / shape'), findsWidgets);
+
+      await tester.tap(find.text('Intense'));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(
+        find.text('All 12 full-body routine moves · Intense targets shown'),
+        findsOneWidget,
+      );
+      expect(find.text('10 / shape'), findsWidgets);
+
+      // Scroll to Push-Ups and verify Standard shows first even when Intense is active
+      final motionsScrollable = find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byWidgetPredicate(
+          (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
+        ),
+      );
+      await tester.scrollUntilVisible(
+        find.text('Push-Ups'),
+        180,
+        scrollable: motionsScrollable,
+      );
+      await tester.pump(const Duration(milliseconds: 120));
+      await tester.tap(find.text('Push-Ups'));
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump(const Duration(milliseconds: 250));
+
+      expect(find.text('STANDARD'), findsOneWidget);
+
+      // Tapping an option tile inside the detail sheet updates the active tier
+      final sheetScrollable = find.descendant(
+        of: find.byType(DraggableScrollableSheet),
+        matching: find.byWidgetPredicate(
+          (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
+        ),
+      );
+      await tester.scrollUntilVisible(
+        find.text('½ · Halfway'),
+        150,
+        scrollable: sheetScrollable,
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.tap(find.text('½ · Halfway'));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Dismiss bottom sheet (e.g. Android back) and confirm Motions tab updated
+      Navigator.of(tester.element(find.text('½ · Halfway'))).pop();
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+      await tester.scrollUntilVisible(
+        find.text('Exercise Motions'),
+        -200,
+        scrollable: motionsScrollable,
+      );
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(
+        find.text('All 12 full-body routine moves · Halfway targets shown'),
+        findsOneWidget,
+      );
+    },
+  );
 }

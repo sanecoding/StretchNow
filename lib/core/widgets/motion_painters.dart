@@ -215,14 +215,19 @@ class _PaintContext {
     Color? color,
     double yaw = 0.0,
     double tilt = 0.0,
+    double pitch = 0.0,
     bool showDirectionDot = false,
   }) {
     final c = color ?? primary;
     final r = radius * s;
     canvas.drawCircle(center, r, Paint()..color = c);
     if (showDirectionDot) {
-      final featureColor =
-          isDark ? const Color(0xFF14131A) : Colors.white.withValues(alpha: 0.9);
+      // Fade facial features slightly as head tilts far back looking up
+      final visibility = (1.0 - math.max(0.0, -pitch - 0.35) * 0.9).clamp(0.25, 1.0);
+      final featureColor = (isDark
+              ? const Color(0xFF14131A)
+              : Colors.white.withValues(alpha: 0.92))
+          .withValues(alpha: visibility);
       final cosT = math.cos(tilt);
       final sinT = math.sin(tilt);
       Offset rot(double lx, double ly) => Offset(
@@ -231,20 +236,21 @@ class _PaintContext {
           );
 
       final noseLocalX = yaw * r * 0.58;
+      final pitchShift = pitch * r * 0.44;
       canvas.drawCircle(
-        rot(noseLocalX, r * 0.06),
+        rot(noseLocalX, r * 0.06 + pitchShift),
         2.3 * s,
         Paint()..color = featureColor,
       );
       // Subtle eye pair
       final eyeOffset = 3.6 * s * (1 - yaw.abs() * 0.45);
       canvas.drawCircle(
-        rot(noseLocalX - eyeOffset, -r * 0.16),
+        rot(noseLocalX - eyeOffset, -r * 0.16 + pitchShift),
         1.5 * s,
         Paint()..color = featureColor,
       );
       canvas.drawCircle(
-        rot(noseLocalX + eyeOffset, -r * 0.16),
+        rot(noseLocalX + eyeOffset, -r * 0.16 + pitchShift),
         1.5 * s,
         Paint()..color = featureColor,
       );
@@ -769,7 +775,9 @@ void _paintNeckRotations(_PaintContext ctx, double t, MotionCue cue) {
 
   double yaw = 0.0; // -1 left, +1 right
   double tilt = 0.0; // -1 tilt left, +1 tilt right
+  double pitch = 0.0; // +1 chin down (front), -1 chin up (back)
   double pitchY = 0.0; // vertical nod offset for roll
+  double rollAngle = 0.0;
   bool showRollHalo = false;
 
   if (cue == MotionCue.neckTurnRight) {
@@ -782,26 +790,30 @@ void _paintNeckRotations(_PaintContext ctx, double t, MotionCue cue) {
     tilt = -(ctx.isPreview ? _easePingPong(t) * 0.78 : _easeInOut((t / 0.25).clamp(0.0, 1.0)) * 0.78);
   } else if (cue == MotionCue.neckRoll) {
     final angle = t * math.pi * 2;
-    yaw = math.sin(angle) * 0.62;
-    pitchY = math.cos(angle) * 0.032; // +front -> 0 right -> -back -> 0 left
-    tilt = math.sin(angle) * 0.36;
+    rollAngle = angle;
+    yaw = math.sin(angle) * 0.75;
+    pitch = math.cos(angle);
+    pitchY = pitch * 0.085; // +front -> 0 right -> -back -> 0 left
+    tilt = math.sin(angle) * 0.68;
     showRollHalo = true;
   } else {
-    // Full 5-stage preview loop
-    if (t < 0.18) {
-      yaw = _easePingPong(t / 0.18) * 0.95;
-    } else if (t < 0.36) {
-      yaw = -_easePingPong((t - 0.18) / 0.18) * 0.95;
-    } else if (t < 0.54) {
-      tilt = _easePingPong((t - 0.36) / 0.18) * 0.78;
-    } else if (t < 0.72) {
-      tilt = -_easePingPong((t - 0.54) / 0.18) * 0.78;
+    // Full 5-stage preview loop (gives Slow Roll a prominent 36% of the loop)
+    if (t < 0.16) {
+      yaw = _easePingPong(t / 0.16) * 0.95;
+    } else if (t < 0.32) {
+      yaw = -_easePingPong((t - 0.16) / 0.16) * 0.95;
+    } else if (t < 0.48) {
+      tilt = _easePingPong((t - 0.32) / 0.16) * 0.78;
+    } else if (t < 0.64) {
+      tilt = -_easePingPong((t - 0.48) / 0.16) * 0.78;
     } else {
-      final rollT = (t - 0.72) / 0.28;
+      final rollT = (t - 0.64) / 0.36;
       final angle = rollT * math.pi * 2;
-      yaw = math.sin(angle) * 0.62;
-      pitchY = math.cos(angle) * 0.032;
-      tilt = math.sin(angle) * 0.36;
+      rollAngle = angle;
+      yaw = math.sin(angle) * 0.75;
+      pitch = math.cos(angle);
+      pitchY = pitch * 0.085;
+      tilt = math.sin(angle) * 0.68;
       showRollHalo = true;
     }
   }
@@ -817,9 +829,9 @@ void _paintNeckRotations(_PaintContext ctx, double t, MotionCue cue) {
   ctx.drawLimb(shoulderL, shoulderR, 20.0, ctx.primary);
   ctx.drawLimb(neckBase, torsoBot, 34.0, ctx.primary);
 
-  // Head pivot off neck base (deeper lateral tilt toward shoulder)
+  // Head pivot off neck base (deeper lateral tilt + wider orbital sweep on roll)
   final headOffset = Offset(
-    math.sin(tilt) * 0.105,
+    math.sin(tilt) * (showRollHalo ? 0.135 : 0.105),
     -math.cos(tilt) * 0.175 + pitchY,
   );
   final headCenter = pt(0.50 + headOffset.dx, 0.54 + headOffset.dy);
@@ -847,11 +859,30 @@ void _paintNeckRotations(_PaintContext ctx, double t, MotionCue cue) {
     radius: 25.0,
     yaw: yaw,
     tilt: tilt,
+    pitch: pitch,
     showDirectionDot: true,
   );
 
   if (showRollHalo) {
-    ctx.drawCurvedArrow(pt(0.50, 0.36), 0.18, 0.14, 0.2, math.pi * 1.65);
+    // Sweeping front -> right -> back -> left arrow (counter-clockwise from 6 o'clock in screen space)
+    ctx.drawCurvedArrow(
+      pt(0.50, 0.365),
+      0.21,
+      0.16,
+      math.pi * 0.55,
+      -math.pi * 1.65,
+    );
+    if (!ctx.compact) {
+      final beadPos = pt(
+        0.50 + math.sin(rollAngle) * 0.21,
+        0.365 + math.cos(rollAngle) * 0.16,
+      );
+      ctx.canvas.drawCircle(
+        beadPos,
+        4.5 * ctx.s,
+        Paint()..color = ctx.accent,
+      );
+    }
   } else if (yaw.abs() > 0.2) {
     ctx.drawCurvedArrow(
       headCenter,

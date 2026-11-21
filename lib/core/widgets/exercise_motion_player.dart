@@ -240,11 +240,11 @@ class _ExerciseMotionPlayerState extends State<ExerciseMotionPlayer>
       case MotionCue.childsPoseToCobra:
         return (t < 0.25 || t > 0.75) ? 'CHILD\'S POSE' : 'COBRA LIFT';
       case MotionCue.neckCycle:
-        if (t < 0.18) return 'TURN RIGHT';
-        if (t < 0.36) return 'TURN LEFT';
-        if (t < 0.54) return 'EAR TO RIGHT';
-        if (t < 0.72) return 'EAR TO LEFT';
-        return 'SLOW ROLL';
+        if (t < 0.16) return 'TURN RIGHT';
+        if (t < 0.32) return 'TURN LEFT';
+        if (t < 0.48) return 'EAR TO RIGHT';
+        if (t < 0.64) return 'EAR TO LEFT';
+        return 'SLOW ROLL (F-R-B-L)';
       case MotionCue.neckTurnRight:
         return 'TURN RIGHT';
       case MotionCue.neckTurnLeft:
@@ -254,7 +254,7 @@ class _ExerciseMotionPlayerState extends State<ExerciseMotionPlayer>
       case MotionCue.neckTiltLeft:
         return 'EAR TO LEFT';
       case MotionCue.neckRoll:
-        return 'SLOW ROLL';
+        return 'SLOW ROLL (F-R-B-L)';
       case MotionCue.toeTouchAlternating:
         return (t < 0.25 || t >= 0.75)
             ? 'RIGHT HAND → LEFT TOE'

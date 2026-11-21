@@ -9,8 +9,9 @@ Future<void> showExerciseDetailSheet({
   required RoutineTier activeTier,
   required bool isFavorite,
   required VoidCallback onToggleFavorite,
-  required VoidCallback onPlaySingle,
-  required VoidCallback onStartFromHere,
+  ValueChanged<RoutineTier>? onSelectTier,
+  required ValueChanged<RoutineTier> onPlaySingle,
+  required ValueChanged<RoutineTier> onStartFromHere,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -21,6 +22,7 @@ Future<void> showExerciseDetailSheet({
       activeTier: activeTier,
       initialIsFavorite: isFavorite,
       onToggleFavorite: onToggleFavorite,
+      onSelectTier: onSelectTier,
       onPlaySingle: onPlaySingle,
       onStartFromHere: onStartFromHere,
     ),
@@ -32,14 +34,16 @@ class _ExerciseDetailSheet extends StatefulWidget {
   final RoutineTier activeTier;
   final bool initialIsFavorite;
   final VoidCallback onToggleFavorite;
-  final VoidCallback onPlaySingle;
-  final VoidCallback onStartFromHere;
+  final ValueChanged<RoutineTier>? onSelectTier;
+  final ValueChanged<RoutineTier> onPlaySingle;
+  final ValueChanged<RoutineTier> onStartFromHere;
 
   const _ExerciseDetailSheet({
     required this.exercise,
     required this.activeTier,
     required this.initialIsFavorite,
     required this.onToggleFavorite,
+    this.onSelectTier,
     required this.onPlaySingle,
     required this.onStartFromHere,
   });
@@ -49,6 +53,7 @@ class _ExerciseDetailSheet extends StatefulWidget {
 }
 
 class _ExerciseDetailSheetState extends State<_ExerciseDetailSheet> {
+  late RoutineTier _selectedTier;
   late MotionCue _selectedCue;
   late bool _isFavorite;
   bool _isPlaying = true;
@@ -57,6 +62,7 @@ class _ExerciseDetailSheetState extends State<_ExerciseDetailSheet> {
   @override
   void initState() {
     super.initState();
+    _selectedTier = widget.activeTier;
     _selectedCue = widget.exercise.previewCueFor(widget.activeTier);
     _isFavorite = widget.initialIsFavorite;
   }
@@ -66,7 +72,7 @@ class _ExerciseDetailSheetState extends State<_ExerciseDetailSheet> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final ex = widget.exercise;
-    final tierColor = widget.activeTier.accentColor;
+    final tierColor = _selectedTier.accentColor;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
@@ -273,21 +279,20 @@ class _ExerciseDetailSheetState extends State<_ExerciseDetailSheet> {
               ]) ...[
                 Row(
                   children: [
-                    Expanded(
-                      child: _TierSummaryTile(
-                        tier: pair[0],
-                        prescription: ex.forTier(pair[0]),
-                        isCurrent: pair[0] == widget.activeTier,
+                    for (var i = 0; i < pair.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 10),
+                      Expanded(
+                        child: _TierSummaryTile(
+                          tier: pair[i],
+                          prescription: ex.forTier(pair[i]),
+                          isCurrent: pair[i] == _selectedTier,
+                          onTap: () {
+                            setState(() => _selectedTier = pair[i]);
+                            widget.onSelectTier?.call(pair[i]);
+                          },
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _TierSummaryTile(
-                        tier: pair[1],
-                        prescription: ex.forTier(pair[1]),
-                        isCurrent: pair[1] == widget.activeTier,
-                      ),
-                    ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -301,7 +306,7 @@ class _ExerciseDetailSheetState extends State<_ExerciseDetailSheet> {
                     child: OutlinedButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        widget.onPlaySingle();
+                        widget.onPlaySingle(_selectedTier);
                       },
                       icon: const Icon(Icons.play_circle_outline_rounded),
                       label: const FittedBox(
@@ -316,7 +321,7 @@ class _ExerciseDetailSheetState extends State<_ExerciseDetailSheet> {
                     child: FilledButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        widget.onStartFromHere();
+                        widget.onStartFromHere(_selectedTier);
                       },
                       icon: const Icon(Icons.play_arrow_rounded),
                       label: FittedBox(
@@ -342,11 +347,13 @@ class _TierSummaryTile extends StatelessWidget {
   final RoutineTier tier;
   final TierPrescription prescription;
   final bool isCurrent;
+  final VoidCallback onTap;
 
   const _TierSummaryTile({
     required this.tier,
     required this.prescription,
     required this.isCurrent,
+    required this.onTap,
   });
 
   @override
@@ -354,49 +361,55 @@ class _TierSummaryTile extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: isCurrent
-            ? tier.accentColor.withValues(alpha: 0.14)
-            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+    return Material(
+      color: isCurrent
+          ? tier.accentColor.withValues(alpha: 0.14)
+          : colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
+        side: BorderSide(
           color: isCurrent
               ? tier.accentColor
               : colorScheme.outlineVariant.withValues(alpha: 0.4),
           width: isCurrent ? 1.5 : 1.0,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '${tier.badge} · ${tier.label}',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: isCurrent
-                  ? tier.accentColor
-                  : colorScheme.onSurfaceVariant,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${tier.badge} · ${tier.label}',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: isCurrent
+                      ? tier.accentColor
+                      : colorScheme.onSurfaceVariant,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                prescription.variantTag != null
+                    ? '${prescription.targetSummary} · ${prescription.variantTag}'
+                    : prescription.targetSummary,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-          const SizedBox(height: 2),
-          Text(
-            prescription.variantTag != null
-                ? '${prescription.targetSummary} · ${prescription.variantTag}'
-                : prescription.targetSummary,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+        ),
       ),
     );
   }

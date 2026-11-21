@@ -227,14 +227,8 @@ class StretchExercise {
 
   TierPrescription forTier(RoutineTier tier) => prescriptions[tier]!;
 
-  /// Best showcase motion cue for preview cards at [tier] (reflects tier-specific
-  /// variants such as Push-Ups while keeping full showcase loops for multi-step moves).
-  MotionCue previewCueFor(RoutineTier tier) {
-    if (motionId == ExerciseMotionId.pushUps) {
-      return forTier(tier).steps.first.motionCue;
-    }
-    return previewOptions.first.cue;
-  }
+  /// Best showcase motion cue for preview cards at [tier].
+  MotionCue previewCueFor(RoutineTier tier) => previewOptions.first.cue;
 
   /// Convenience getter for default/first tier duration when needed.
   int durationSecondsForTier(RoutineTier tier) =>
@@ -634,8 +628,8 @@ class StretchExercise {
       motionId: ExerciseMotionId.pushUps,
       previewCycleSeconds: 2.2,
       previewOptions: const [
-        MotionPreviewOption('Knees Down', MotionCue.pushupKnees),
         MotionPreviewOption('Standard', MotionCue.pushupStandard),
+        MotionPreviewOption('Knees Down', MotionCue.pushupKnees),
         MotionPreviewOption('Feet Elevated', MotionCue.pushupElevated),
       ],
       prescriptions: const {

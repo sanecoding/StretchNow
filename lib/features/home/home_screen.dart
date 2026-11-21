@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:stretchnow/core/models/stretch_model.dart';
 import 'package:stretchnow/core/widgets/exercise_detail_sheet.dart';
 import 'package:stretchnow/core/widgets/exercise_motion_player.dart';
+import 'package:stretchnow/core/widgets/routine_tier_selector.dart';
 import 'package:stretchnow/features/home/home_view_model.dart';
 import 'package:stretchnow/features/routine/routine_player_screen.dart';
 import 'package:stretchnow/features/schedule/schedule_view_model.dart';
@@ -118,22 +119,9 @@ class HomeScreen extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 12),
-                          Row(
-                            children: RoutineTier.values.map((tier) {
-                              final isSelected = tier == selectedTier;
-                              return Expanded(
-                                child: Padding(
-                                  padding: EdgeInsets.only(
-                                    right: tier == RoutineTier.intense ? 0 : 6,
-                                  ),
-                                  child: _TierOptionPill(
-                                    tier: tier,
-                                    isSelected: isSelected,
-                                    onTap: () => homeVm.selectTier(tier),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
+                          RoutineTierSelector(
+                            selectedTier: selectedTier,
+                            onSelect: homeVm.selectTier,
                           ),
                           const SizedBox(height: 10),
                           Row(
@@ -435,18 +423,19 @@ class HomeScreen extends StatelessWidget {
       activeTier: homeVm.selectedTier,
       isFavorite: stretchesVm.isFavorite(exercise.id),
       onToggleFavorite: () => stretchesVm.toggleFavorite(exercise.id),
-      onPlaySingle: () => _launchRoutine(
+      onSelectTier: homeVm.selectTier,
+      onPlaySingle: (tier) => _launchRoutine(
         context,
         exercises: [exercise],
         initialIndex: 0,
-        tier: homeVm.selectedTier,
+        tier: tier,
         title: exercise.name,
       ),
-      onStartFromHere: () => _launchRoutine(
+      onStartFromHere: (tier) => _launchRoutine(
         context,
         exercises: homeVm.routine,
         initialIndex: exercise.number - 1,
-        tier: homeVm.selectedTier,
+        tier: tier,
         title: 'Lazy Full Body Routine',
       ),
     );
@@ -466,70 +455,6 @@ class HomeScreen extends StatelessWidget {
           initialIndex: initialIndex,
           tier: tier,
           sessionTitle: title,
-        ),
-      ),
-    );
-  }
-}
-
-class _TierOptionPill extends StatelessWidget {
-  final RoutineTier tier;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _TierOptionPill({
-    required this.tier,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final color = tier.accentColor;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? color
-              : colorScheme.surface.withValues(alpha: 0.7),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected
-                ? color
-                : colorScheme.outlineVariant.withValues(alpha: 0.45),
-          ),
-        ),
-        child: Column(
-          children: [
-            Text(
-              tier.badge,
-              style: GoogleFonts.outfit(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                color: isSelected ? Colors.white : color,
-              ),
-            ),
-            const SizedBox(height: 2),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                tier.label,
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
-                  color: isSelected
-                      ? Colors.white
-                      : colorScheme.onSurface,
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );
