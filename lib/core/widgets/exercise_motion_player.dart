@@ -256,7 +256,9 @@ class _ExerciseMotionPlayerState extends State<ExerciseMotionPlayer>
       case MotionCue.neckRoll:
         return 'SLOW ROLL';
       case MotionCue.toeTouchAlternating:
-        return (t < 0.25 || t >= 0.75) ? 'TOUCH LEFT TOE' : 'TOUCH RIGHT TOE';
+        return (t < 0.25 || t >= 0.75)
+            ? 'RIGHT HAND → LEFT TOE'
+            : 'LEFT HAND → RIGHT TOE';
       case MotionCue.itBandAlternating:
         return t < 0.5 ? 'LEFT IT BAND' : 'RIGHT IT BAND';
       case MotionCue.itBandLeft:

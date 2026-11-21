@@ -878,12 +878,14 @@ void _paintCrossoverToeTouch(_PaintContext ctx, double t) {
   ctx.drawFloorShadow(cx: 0.50, y: 0.85, rx: 0.24, ry: 0.022);
   final pt = ctx.pt;
 
-  // swing = +1 -> right hand touches left toe while left arm swings high
-  // swing = -1 -> left hand touches right toe while right arm swings high
+  // swing = +1 -> right hand crosses over to touch left foot while left arm swings up
+  // swing = -1 -> left hand crosses over to touch right foot while right arm swings up
   final swing = math.cos(t * math.pi * 2);
-  final alpha = swing * 1.02;
+  final theta = swing * 2.15; // ±123 deg rotation around bent-forward torso
+  final cosT = math.cos(theta);
+  final sinT = math.sin(theta);
 
-  // Wide straddle legs
+  // Wide straddle legs (screen-left = left foot, screen-right = right foot)
   final pelvis = pt(0.50, 0.50);
   final footL = pt(0.28, 0.835);
   final kneeL = pt(0.38, 0.67);
@@ -895,31 +897,24 @@ void _paintCrossoverToeTouch(_PaintContext ctx, double t) {
   ctx.drawLimb(pelvis, kneeR, 11.8, ctx.primary);
   ctx.drawLimb(kneeR, footR, 9.8, ctx.primary);
 
-  // Bent-forward torso twisting gently toward the reaching arm
-  final shouldersCenter = pt(0.50 - swing * 0.02, 0.47 + 0.045 * swing.abs());
-  final spineCtrl = pt(0.50, 0.485);
-  final head = pt(0.50 - swing * 0.03, 0.535 + 0.04 * swing.abs());
+  // Bent-forward torso hinged at pelvis; shoulders rotate around torso axis
+  final shouldersCenter = pt(0.50 - swing * 0.015, 0.49 + 0.025 * swing.abs());
+  final spineCtrl = pt(0.50, 0.495);
+  final head = pt(0.50 - swing * 0.02, 0.55 + 0.02 * swing.abs());
 
-  final shoulderR = shouldersCenter + Offset(-0.08 * ctx.side, 0.05 * swing * ctx.side);
-  final shoulderL = shouldersCenter + Offset(0.08 * ctx.side, -0.05 * swing * ctx.side);
+  Offset rotArm(double vx, {double yScale = 0.86}) =>
+      shouldersCenter +
+      Offset(vx * cosT * ctx.side, vx * sinT * yScale * ctx.side);
 
-  // Arms rotate continuously like windmill wings:
-  // swing > 0: right hand reaches down to left toe (footL), left arm swings high up
-  // swing < 0: left hand reaches down to right toe (footR), right arm swings high up
-  final cosA = math.cos(alpha);
-  final sinA = math.sin(alpha);
-  final handR = shoulderR +
-      Offset(
-        (-0.14 * cosA - (swing > 0 ? 0.01 : 0.0)) * ctx.side,
-        (0.29 * sinA - (swing < 0 ? 0.04 * -swing : 0.0)) * ctx.side,
-      );
-  final handL = shoulderL +
-      Offset(
-        (0.14 * cosA + (swing < 0 ? 0.01 : 0.0)) * ctx.side,
-        (-0.29 * sinA - (swing > 0 ? 0.04 * swing : 0.0)) * ctx.side,
-      );
+  // Screen-left shoulder/arm (L) starts at -x; screen-right shoulder/arm (R) starts at +x.
+  // Rotating by +2.15 rad brings +x arm across front to footL (0.28, 0.81) and -x arm up (0.71, 0.18).
+  // Rotating by -2.15 rad brings -x arm across front to footR (0.72, 0.81) and +x arm up (0.29, 0.18).
+  final shoulderL = rotArm(-0.085, yScale: 0.72);
+  final shoulderR = rotArm(0.085, yScale: 0.72);
+  final handL = rotArm(-0.375, yScale: 0.98);
+  final handR = rotArm(0.375, yScale: 0.98);
 
-  // Back/upper swinging arm drawn behind torso, front reaching arm drawn in front
+  // Back/upper swinging arm drawn behind torso, front crossing arm drawn in front
   if (swing >= 0) {
     ctx.drawLimb(shoulderL, handL, 7.6, ctx.far);
     ctx.drawCurvedSpine(pelvis, spineCtrl, shouldersCenter, 16.5, ctx.primary);
@@ -934,8 +929,8 @@ void _paintCrossoverToeTouch(_PaintContext ctx, double t) {
     ctx.drawLimb(shoulderL, handL, 8.2, ctx.primary);
   }
 
-  ctx.drawJoint(handR, 3.8);
-  ctx.drawJoint(handL, 3.8);
+  ctx.drawJoint(handR, 4.0);
+  ctx.drawJoint(handL, 4.0);
 
   if (swing.abs() < 0.7) {
     final goingRight = math.sin(t * math.pi * 2) > 0;
