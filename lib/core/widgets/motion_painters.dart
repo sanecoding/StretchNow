@@ -214,6 +214,7 @@ class _PaintContext {
     double radius = 13.5,
     Color? color,
     double yaw = 0.0,
+    double tilt = 0.0,
     bool showDirectionDot = false,
   }) {
     final c = color ?? primary;
@@ -222,21 +223,28 @@ class _PaintContext {
     if (showDirectionDot) {
       final featureColor =
           isDark ? const Color(0xFF14131A) : Colors.white.withValues(alpha: 0.9);
-      final noseX = center.dx + yaw * r * 0.58;
+      final cosT = math.cos(tilt);
+      final sinT = math.sin(tilt);
+      Offset rot(double lx, double ly) => Offset(
+            center.dx + lx * cosT - ly * sinT,
+            center.dy + lx * sinT + ly * cosT,
+          );
+
+      final noseLocalX = yaw * r * 0.58;
       canvas.drawCircle(
-        Offset(noseX, center.dy + r * 0.06),
+        rot(noseLocalX, r * 0.06),
         2.3 * s,
         Paint()..color = featureColor,
       );
       // Subtle eye pair
       final eyeOffset = 3.6 * s * (1 - yaw.abs() * 0.45);
       canvas.drawCircle(
-        Offset(noseX - eyeOffset, center.dy - r * 0.16),
+        rot(noseLocalX - eyeOffset, -r * 0.16),
         1.5 * s,
         Paint()..color = featureColor,
       );
       canvas.drawCircle(
-        Offset(noseX + eyeOffset, center.dy - r * 0.16),
+        rot(noseLocalX + eyeOffset, -r * 0.16),
         1.5 * s,
         Paint()..color = featureColor,
       );
@@ -330,8 +338,6 @@ double _easePingPong(double t) {
 double _easeInOut(double t) => Curves.easeInOut.transform(t.clamp(0.0, 1.0));
 
 Offset _lerp(Offset a, Offset b, double t) => Offset.lerp(a, b, t)!;
-
-double _lerpD(double a, double b, double t) => a + (b - a) * t;
 
 // -----------------------------------------------------------------------------
 // 1. SPINAL TWIST (Elevated 3/4 overhead view on vertical mat)
@@ -771,14 +777,14 @@ void _paintNeckRotations(_PaintContext ctx, double t, MotionCue cue) {
   } else if (cue == MotionCue.neckTurnLeft) {
     yaw = -(ctx.isPreview ? _easePingPong(t) * 0.95 : _easeInOut((t / 0.25).clamp(0.0, 1.0)) * 0.95);
   } else if (cue == MotionCue.neckTiltRight) {
-    tilt = ctx.isPreview ? _easePingPong(t) * 0.45 : _easeInOut((t / 0.25).clamp(0.0, 1.0)) * 0.45;
+    tilt = ctx.isPreview ? _easePingPong(t) * 0.78 : _easeInOut((t / 0.25).clamp(0.0, 1.0)) * 0.78;
   } else if (cue == MotionCue.neckTiltLeft) {
-    tilt = -(ctx.isPreview ? _easePingPong(t) * 0.45 : _easeInOut((t / 0.25).clamp(0.0, 1.0)) * 0.45);
+    tilt = -(ctx.isPreview ? _easePingPong(t) * 0.78 : _easeInOut((t / 0.25).clamp(0.0, 1.0)) * 0.78);
   } else if (cue == MotionCue.neckRoll) {
     final angle = t * math.pi * 2;
     yaw = math.sin(angle) * 0.62;
     pitchY = math.cos(angle) * 0.032; // +front -> 0 right -> -back -> 0 left
-    tilt = math.sin(angle) * 0.28;
+    tilt = math.sin(angle) * 0.36;
     showRollHalo = true;
   } else {
     // Full 5-stage preview loop
@@ -787,15 +793,15 @@ void _paintNeckRotations(_PaintContext ctx, double t, MotionCue cue) {
     } else if (t < 0.36) {
       yaw = -_easePingPong((t - 0.18) / 0.18) * 0.95;
     } else if (t < 0.54) {
-      tilt = _easePingPong((t - 0.36) / 0.18) * 0.45;
+      tilt = _easePingPong((t - 0.36) / 0.18) * 0.78;
     } else if (t < 0.72) {
-      tilt = -_easePingPong((t - 0.54) / 0.18) * 0.45;
+      tilt = -_easePingPong((t - 0.54) / 0.18) * 0.78;
     } else {
       final rollT = (t - 0.72) / 0.28;
       final angle = rollT * math.pi * 2;
       yaw = math.sin(angle) * 0.62;
       pitchY = math.cos(angle) * 0.032;
-      tilt = math.sin(angle) * 0.28;
+      tilt = math.sin(angle) * 0.36;
       showRollHalo = true;
     }
   }
@@ -811,10 +817,10 @@ void _paintNeckRotations(_PaintContext ctx, double t, MotionCue cue) {
   ctx.drawLimb(shoulderL, shoulderR, 20.0, ctx.primary);
   ctx.drawLimb(neckBase, torsoBot, 34.0, ctx.primary);
 
-  // Head pivot off neck base
+  // Head pivot off neck base (deeper lateral tilt toward shoulder)
   final headOffset = Offset(
-    math.sin(tilt) * 0.075,
-    -math.cos(tilt) * 0.18 + pitchY,
+    math.sin(tilt) * 0.105,
+    -math.cos(tilt) * 0.175 + pitchY,
   );
   final headCenter = pt(0.50 + headOffset.dx, 0.54 + headOffset.dy);
 
@@ -840,6 +846,7 @@ void _paintNeckRotations(_PaintContext ctx, double t, MotionCue cue) {
     headCenter,
     radius: 25.0,
     yaw: yaw,
+    tilt: tilt,
     showDirectionDot: true,
   );
 
@@ -856,53 +863,90 @@ void _paintNeckRotations(_PaintContext ctx, double t, MotionCue cue) {
   } else if (tilt.abs() > 0.12) {
     ctx.drawCurvedArrow(
       pt(0.50, 0.37),
-      0.16,
-      0.16,
+      0.17,
+      0.17,
       tilt > 0 ? -math.pi * 0.55 : -math.pi * 0.45,
-      tilt > 0 ? 0.95 : -0.95,
+      tilt > 0 ? 1.15 : -1.15,
     );
   }
 }
 
 // -----------------------------------------------------------------------------
-// 9. STANDING CROSSOVER TOE TOUCH (Front-3/4 standing view)
+// 9. BENDING CROSSOVER TOE TOUCH (Wide-stance bent-over windmill swing)
 // -----------------------------------------------------------------------------
 void _paintCrossoverToeTouch(_PaintContext ctx, double t) {
-  ctx.drawFloorShadow(cx: 0.50, y: 0.84, rx: 0.14, ry: 0.022);
+  ctx.drawFloorShadow(cx: 0.50, y: 0.85, rx: 0.24, ry: 0.022);
   final pt = ctx.pt;
 
-  final isLeftInFront = t < 0.5;
-  final halfT = isLeftInFront ? t * 2.0 : (t - 0.5) * 2.0;
-  final fold = _easePingPong(halfT);
+  // swing = +1 -> right hand touches left toe while left arm swings high
+  // swing = -1 -> left hand touches right toe while right arm swings high
+  final swing = math.cos(t * math.pi * 2);
+  final alpha = swing * 1.02;
 
-  final pelvis = pt(0.50, _lerpD(0.50, 0.48, fold));
+  // Wide straddle legs
+  final pelvis = pt(0.50, 0.50);
+  final footL = pt(0.28, 0.835);
+  final kneeL = pt(0.38, 0.67);
+  final footR = pt(0.72, 0.835);
+  final kneeR = pt(0.62, 0.67);
 
-  // Crossed feet at floor
-  final footBack = pt(isLeftInFront ? 0.46 : 0.54, 0.825);
-  final kneeBack = pt(isLeftInFront ? 0.47 : 0.53, 0.66);
+  ctx.drawLimb(pelvis, kneeL, 11.8, ctx.primary);
+  ctx.drawLimb(kneeL, footL, 9.8, ctx.primary);
+  ctx.drawLimb(pelvis, kneeR, 11.8, ctx.primary);
+  ctx.drawLimb(kneeR, footR, 9.8, ctx.primary);
 
-  final footFront = pt(isLeftInFront ? 0.56 : 0.44, 0.835);
-  final kneeFront = pt(isLeftInFront ? 0.53 : 0.47, 0.66);
+  // Bent-forward torso twisting gently toward the reaching arm
+  final shouldersCenter = pt(0.50 - swing * 0.02, 0.47 + 0.045 * swing.abs());
+  final spineCtrl = pt(0.50, 0.485);
+  final head = pt(0.50 - swing * 0.03, 0.535 + 0.04 * swing.abs());
 
-  // Back leg
-  ctx.drawLimb(pelvis, kneeBack, 11.5, ctx.far);
-  ctx.drawLimb(kneeBack, footBack, 9.5, ctx.far);
-  // Front crossed leg
-  ctx.drawLimb(pelvis, kneeFront, 12.0, ctx.primary);
-  ctx.drawLimb(kneeFront, footFront, 9.8, ctx.primary);
+  final shoulderR = shouldersCenter + Offset(-0.08 * ctx.side, 0.05 * swing * ctx.side);
+  final shoulderL = shouldersCenter + Offset(0.08 * ctx.side, -0.05 * swing * ctx.side);
 
-  // Hinged torso & arms reaching to toes
-  final shoulders = _lerp(pt(0.50, 0.30), pt(0.50, 0.585), fold);
-  final spineCtrl = _lerp(pt(0.50, 0.40), pt(0.50, 0.50), fold);
-  final head = _lerp(pt(0.50, 0.20), pt(0.50, 0.665), fold);
-  final handL = _lerp(pt(0.41, 0.50), pt(0.46, 0.795), fold);
-  final handR = _lerp(pt(0.59, 0.50), pt(0.54, 0.795), fold);
+  // Arms rotate continuously like windmill wings:
+  // swing > 0: right hand reaches down to left toe (footL), left arm swings high up
+  // swing < 0: left hand reaches down to right toe (footR), right arm swings high up
+  final cosA = math.cos(alpha);
+  final sinA = math.sin(alpha);
+  final handR = shoulderR +
+      Offset(
+        (-0.14 * cosA - (swing > 0 ? 0.01 : 0.0)) * ctx.side,
+        (0.29 * sinA - (swing < 0 ? 0.04 * -swing : 0.0)) * ctx.side,
+      );
+  final handL = shoulderL +
+      Offset(
+        (0.14 * cosA + (swing < 0 ? 0.01 : 0.0)) * ctx.side,
+        (-0.29 * sinA - (swing > 0 ? 0.04 * swing : 0.0)) * ctx.side,
+      );
 
-  ctx.drawLimb(shoulders, handL, 7.6, ctx.far);
-  ctx.drawCurvedSpine(pelvis, spineCtrl, shoulders, 16.5, ctx.primary);
-  ctx.drawLimb(shoulders, head, 8.0, ctx.primary);
-  ctx.drawHead(head, radius: 12.0);
-  ctx.drawLimb(shoulders, handR, 8.0, ctx.primary);
+  // Back/upper swinging arm drawn behind torso, front reaching arm drawn in front
+  if (swing >= 0) {
+    ctx.drawLimb(shoulderL, handL, 7.6, ctx.far);
+    ctx.drawCurvedSpine(pelvis, spineCtrl, shouldersCenter, 16.5, ctx.primary);
+    ctx.drawLimb(shoulderR, shoulderL, 12.0, ctx.primary);
+    ctx.drawHead(head, radius: 11.5);
+    ctx.drawLimb(shoulderR, handR, 8.2, ctx.primary);
+  } else {
+    ctx.drawLimb(shoulderR, handR, 7.6, ctx.far);
+    ctx.drawCurvedSpine(pelvis, spineCtrl, shouldersCenter, 16.5, ctx.primary);
+    ctx.drawLimb(shoulderR, shoulderL, 12.0, ctx.primary);
+    ctx.drawHead(head, radius: 11.5);
+    ctx.drawLimb(shoulderL, handL, 8.2, ctx.primary);
+  }
+
+  ctx.drawJoint(handR, 3.8);
+  ctx.drawJoint(handL, 3.8);
+
+  if (swing.abs() < 0.7) {
+    final goingRight = math.sin(t * math.pi * 2) > 0;
+    ctx.drawCurvedArrow(
+      pt(0.50, 0.72),
+      0.16,
+      0.08,
+      goingRight ? math.pi * 0.75 : math.pi * 0.25,
+      goingRight ? -math.pi * 0.5 : math.pi * 0.5,
+    );
+  }
 }
 
 // -----------------------------------------------------------------------------

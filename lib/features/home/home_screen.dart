@@ -7,6 +7,7 @@ import 'package:stretchnow/core/widgets/exercise_detail_sheet.dart';
 import 'package:stretchnow/core/widgets/exercise_motion_player.dart';
 import 'package:stretchnow/features/home/home_view_model.dart';
 import 'package:stretchnow/features/routine/routine_player_screen.dart';
+import 'package:stretchnow/features/schedule/schedule_view_model.dart';
 import 'package:stretchnow/features/stretches/stretches_view_model.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -54,11 +55,20 @@ class HomeScreen extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 2),
-                              Text(
-                                todayStr,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
+                              Builder(
+                                builder: (context) {
+                                  final scheduleVm =
+                                      context.watch<ScheduleViewModel>();
+                                  final wakeInfo = scheduleVm.reminderEnabled
+                                      ? '$todayStr · Wake-up ${scheduleVm.formattedStretchTime}'
+                                      : todayStr;
+                                  return Text(
+                                    wakeInfo,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  );
+                                },
                               ),
                             ],
                           ),

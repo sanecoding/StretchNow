@@ -181,8 +181,8 @@ class SettingsScreen extends StatelessWidget {
                         _SwitchTile(
                           icon: Icons.notifications_outlined,
                           iconColor: colorScheme.primary,
-                          title: 'Stretch Reminders',
-                          subtitle: 'Regular prompts to move',
+                          title: 'Wake-Up Reminders',
+                          subtitle: 'Daily prompt when you wake up',
                           value: viewModel.notificationsEnabled,
                           onChanged: viewModel.toggleNotifications,
                         ),

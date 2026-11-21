@@ -11,7 +11,11 @@ class AppConstants {
   static const String keyDailyExercisesDone = 'daily_exercises_done_';
   static const String keyDailyTierHistory = 'daily_tier_';
 
-  // Schedule keys
+  // Schedule keys (Wake-up routine)
+  static const String keyWakeUpHour = 'wake_up_hour';
+  static const String keyWakeUpMinute = 'wake_up_minute';
+  static const String keyWakeUpDays = 'wake_up_days';
+  static const String keyWakeUpDelayMinutes = 'wake_up_delay_minutes';
   static const String keyActiveHoursStart = 'active_hours_start';
   static const String keyActiveHoursEnd = 'active_hours_end';
   static const String keyReminderFrequency = 'reminder_frequency_hours';

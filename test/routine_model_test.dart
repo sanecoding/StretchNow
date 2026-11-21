@@ -4,6 +4,7 @@ import 'package:stretchnow/core/services/notification_service.dart';
 import 'package:stretchnow/core/services/storage_service.dart';
 import 'package:stretchnow/features/history/history_view_model.dart';
 import 'package:stretchnow/features/home/home_view_model.dart';
+import 'package:stretchnow/features/schedule/schedule_view_model.dart';
 import 'package:stretchnow/features/settings/settings_view_model.dart';
 
 void main() {
@@ -14,14 +15,14 @@ void main() {
 
       final expectedNames = [
         'Spinal Twist',
-        'Hollow Body Hold',
         'Hamstring Bridge',
+        'Hollow Body Hold',
         'Prone Y-T-W Raises',
         'Push-Ups',
         'Standard Plank',
         'Kneeling Child\'s Pose to Cobra',
         'Neck Rotations',
-        'Standing Crossover Toe Touch',
+        'Bending Crossover Toe Touch',
         'Left & Right IT Band Stretch',
         'Skipping Scissors',
         'Squats',
@@ -144,6 +145,26 @@ void main() {
       homeVm.dispose();
       historyVm.dispose();
       settingsVm.dispose();
+    });
+
+    test('ScheduleViewModel manages wake-up routine time, days, and delay', () async {
+      final storage = StorageService.inMemory();
+      final scheduleVm = ScheduleViewModel(storage, NotificationService());
+
+      expect(scheduleVm.formattedWakeUpTime, '7:00 AM');
+      expect(scheduleVm.formattedStretchTime, '7:00 AM');
+      expect(scheduleVm.repeatSummary, 'Every day');
+      expect(scheduleVm.reminderEnabled, isTrue);
+
+      await scheduleVm.updateWakeUpTime(6, 45);
+      await scheduleVm.updateDelayMinutes(10);
+      await scheduleVm.setRepeatPreset(ScheduleViewModel.weekdaysOnly);
+
+      expect(scheduleVm.formattedWakeUpTime, '6:45 AM');
+      expect(scheduleVm.formattedStretchTime, '6:55 AM');
+      expect(scheduleVm.repeatSummary, 'Weekdays');
+
+      scheduleVm.dispose();
     });
   });
 }

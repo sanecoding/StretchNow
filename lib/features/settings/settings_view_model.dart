@@ -102,25 +102,7 @@ class SettingsViewModel extends ChangeNotifier {
 
     if (value) {
       await _notificationService.requestPermissions();
-      final start = _storageService.getInt(
-        AppConstants.keyActiveHoursStart,
-        defaultValue: 9,
-      );
-      final end = _storageService.getInt(
-        AppConstants.keyActiveHoursEnd,
-        defaultValue: 17,
-      );
-      final interval = _storageService.getInt(
-        AppConstants.keyReminderFrequency,
-        defaultValue: 2,
-      );
-
-      await _notificationService.scheduleReminders(
-        startHour: start,
-        endHour: end,
-        intervalHours: interval,
-        vibrationsEnabled: _vibrationEnabled,
-      );
+      await _rescheduleWakeUp();
     } else {
       await _notificationService.cancelAllReminders();
     }
@@ -134,26 +116,38 @@ class SettingsViewModel extends ChangeNotifier {
     );
 
     if (_notificationsEnabled) {
-      final start = _storageService.getInt(
-        AppConstants.keyActiveHoursStart,
-        defaultValue: 9,
-      );
-      final end = _storageService.getInt(
-        AppConstants.keyActiveHoursEnd,
-        defaultValue: 17,
-      );
-      final interval = _storageService.getInt(
-        AppConstants.keyReminderFrequency,
-        defaultValue: 2,
-      );
-
-      await _notificationService.scheduleReminders(
-        startHour: start,
-        endHour: end,
-        intervalHours: interval,
-        vibrationsEnabled: _vibrationEnabled,
-      );
+      await _rescheduleWakeUp();
     }
+  }
+
+  Future<void> _rescheduleWakeUp() async {
+    final baseHour = _storageService.getInt(
+      AppConstants.keyWakeUpHour,
+      defaultValue: 7,
+    );
+    final baseMinute = _storageService.getInt(
+      AppConstants.keyWakeUpMinute,
+      defaultValue: 0,
+    );
+    final delay = _storageService.getInt(
+      AppConstants.keyWakeUpDelayMinutes,
+      defaultValue: 0,
+    );
+    final rawDays = _storageService.getString(AppConstants.keyWakeUpDays) ?? '';
+    final days = rawDays
+        .split(',')
+        .map((e) => int.tryParse(e.trim()))
+        .whereType<int>()
+        .where((d) => d >= 1 && d <= 7)
+        .toSet();
+    final totalMinutes = (baseHour * 60 + baseMinute + delay) % (24 * 60);
+
+    await _notificationService.scheduleWakeUpRoutine(
+      hour: totalMinutes ~/ 60,
+      minute: totalMinutes % 60,
+      repeatDays: days.isEmpty ? {1, 2, 3, 4, 5, 6, 7} : days,
+      vibrationsEnabled: _vibrationEnabled,
+    );
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {

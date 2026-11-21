@@ -39,6 +39,16 @@ class StorageService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Atomically writes multiple app data entries and notifies listeners once.
+  Future<void> saveEntries(Map<String, String> entries) async {
+    if (_useMemory) {
+      _memoryAppData.addAll(entries);
+    } else {
+      await _appDataBox!.putAll(entries);
+    }
+    notifyListeners();
+  }
+
   String? getString(String key) {
     if (_useMemory) return _memoryAppData[key];
     return _appDataBox!.get(key);

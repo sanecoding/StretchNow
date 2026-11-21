@@ -111,7 +111,22 @@ void main() {
       // Navigate remaining tabs
       await tester.tap(find.text('Schedule'));
       await tester.pump(const Duration(milliseconds: 150));
-      expect(find.text('Reminder Frequency'), findsOneWidget);
+      expect(find.text('Wake-Up Routine'), findsOneWidget);
+      expect(find.text('7:00 AM'), findsOneWidget);
+
+      await tester.ensureVisible(find.text('Weekdays'));
+      await tester.pump();
+      await tester.tap(find.text('Weekdays'));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      await tester.ensureVisible(find.text('5 minutes after wake-up'));
+      await tester.pump();
+      await tester.tap(find.text('5 minutes after wake-up'));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      await tester.drag(find.byType(ListView), const Offset(0, 600));
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(find.text('Stretch at 7:05 AM · Weekdays'), findsOneWidget);
 
       await tester.tap(find.text('History'));
       await tester.pump(const Duration(milliseconds: 150));

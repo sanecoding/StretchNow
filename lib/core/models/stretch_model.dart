@@ -65,7 +65,7 @@ enum RoutineBlock {
     title: 'Floor Block',
     rangeLabel: '#1–5 · Lying & Push',
     flowNote:
-        'Rotation → anterior core → posterior chain → upper back/rear delts → pushing',
+        'Rotation → posterior chain → anterior core → upper back/rear delts → pushing',
     icon: Icons.layers_rounded,
     accentColor: Color(0xFF8B5CF6),
   ),
@@ -460,49 +460,9 @@ class StretchExercise {
       },
     ),
 
-    // 2. Hollow body hold
+    // 2. Hamstring bridge
     StretchExercise(
       number: 2,
-      id: 'hollow_body_hold',
-      name: 'Hollow Body Hold',
-      shortCue: 'Lying on back, lift shoulders and legs, lower back pressed down',
-      description:
-          'Lie on your back, tuck your ribs down, and press your lower back firmly into the floor. Lift your shoulder blades, arms, and straight legs slightly off the mat to hold a tight hollow dish shape.',
-      focusArea: 'Anterior Core',
-      block: RoutineBlock.floorBlock,
-      motionId: ExerciseMotionId.hollowBodyHold,
-      previewCycleSeconds: 4.5,
-      previewOptions: const [
-        MotionPreviewOption('Active Hold', MotionCue.hollowHold),
-        MotionPreviewOption('Rest Pose', MotionCue.restFlat),
-      ],
-      prescriptions: {
-        RoutineTier.halfway: TierPrescription(
-          targetSummary: '5s ×3',
-          detailText: '3 holds × 5s (5s rest)',
-          steps: _hollowSets(5, 5),
-        ),
-        RoutineTier.sweatless: TierPrescription(
-          targetSummary: '10s ×3',
-          detailText: '3 holds × 10s (6s rest)',
-          steps: _hollowSets(10, 6),
-        ),
-        RoutineTier.sweaty: TierPrescription(
-          targetSummary: '20s ×3',
-          detailText: '3 holds × 20s (8s rest)',
-          steps: _hollowSets(20, 8),
-        ),
-        RoutineTier.intense: TierPrescription(
-          targetSummary: '30s ×3',
-          detailText: '3 holds × 30s (10s rest)',
-          steps: _hollowSets(30, 10),
-        ),
-      },
-    ),
-
-    // 3. Hamstring bridge
-    StretchExercise(
-      number: 3,
       id: 'hamstring_bridge',
       name: 'Hamstring Bridge',
       shortCue: 'Lying on back, knees bent, feet flat, lift hips using hamstrings & lower back',
@@ -571,6 +531,46 @@ class StretchExercise {
               secondsPerRep: 2.5,
             ),
           ],
+        ),
+      },
+    ),
+
+    // 3. Hollow body hold
+    StretchExercise(
+      number: 3,
+      id: 'hollow_body_hold',
+      name: 'Hollow Body Hold',
+      shortCue: 'Lying on back, lift shoulders and legs, lower back pressed down',
+      description:
+          'Lie on your back, tuck your ribs down, and press your lower back firmly into the floor. Lift your shoulder blades, arms, and straight legs slightly off the mat to hold a tight hollow dish shape.',
+      focusArea: 'Anterior Core',
+      block: RoutineBlock.floorBlock,
+      motionId: ExerciseMotionId.hollowBodyHold,
+      previewCycleSeconds: 4.5,
+      previewOptions: const [
+        MotionPreviewOption('Active Hold', MotionCue.hollowHold),
+        MotionPreviewOption('Rest Pose', MotionCue.restFlat),
+      ],
+      prescriptions: {
+        RoutineTier.halfway: TierPrescription(
+          targetSummary: '5s ×3',
+          detailText: '3 holds × 5s (5s rest)',
+          steps: _hollowSets(5, 5),
+        ),
+        RoutineTier.sweatless: TierPrescription(
+          targetSummary: '10s ×3',
+          detailText: '3 holds × 10s (6s rest)',
+          steps: _hollowSets(10, 6),
+        ),
+        RoutineTier.sweaty: TierPrescription(
+          targetSummary: '20s ×3',
+          detailText: '3 holds × 20s (8s rest)',
+          steps: _hollowSets(20, 8),
+        ),
+        RoutineTier.intense: TierPrescription(
+          targetSummary: '30s ×3',
+          detailText: '3 holds × 30s (10s rest)',
+          steps: _hollowSets(30, 10),
         ),
       },
     ),
@@ -884,29 +884,29 @@ class StretchExercise {
       },
     ),
 
-    // 9. Standing crossover toe touch
+    // 9. Bending crossover toe touch
     StretchExercise(
       number: 9,
       id: 'crossover_toe_touch',
-      name: 'Standing Crossover Toe Touch',
-      shortCue: 'Cross one foot over the other, bend and touch toes, alternate',
+      name: 'Bending Crossover Toe Touch',
+      shortCue: 'Bend over with legs spread apart, touch opposite toe while swinging other arm up',
       description:
-          'Stand upright, cross one foot cleanly in front of the other, and hinge gently at the hips to reach down toward your toes. Rise back up, switch which foot crosses in front, and alternate each rep.',
+          'Stand with your legs spread wide apart and bend forward at the hips. Reach one hand down to touch the opposite toe while swinging your other arm high up, then swing your arms back so the raised hand touches its opposite toe as the first arm swings up.',
       focusArea: 'Hamstrings & Back',
       block: RoutineBlock.standingFinisher,
       motionId: ExerciseMotionId.crossoverToeTouch,
-      previewCycleSeconds: 5.2,
+      previewCycleSeconds: 3.2,
       previewOptions: const [
-        MotionPreviewOption('Alternating Reach', MotionCue.toeTouchAlternating),
+        MotionPreviewOption('Windmill Swing', MotionCue.toeTouchAlternating),
       ],
       prescriptions: const {
         RoutineTier.halfway: TierPrescription(
           targetSummary: '5 reps',
-          detailText: '5 alternating crossover touches',
+          detailText: '5 wide-stance crossover swings',
           steps: [
             ExercisePhaseStep(
-              title: 'Crossover Toe Touches',
-              instruction: 'Cross foot over, fold at hips to toes, alternate sides.',
+              title: 'Bending Crossover Toe Touches',
+              instruction: 'Bend forward, touch opposite toe while swinging the other arm up.',
               motionCue: MotionCue.toeTouchAlternating,
               isRepBased: true,
               targetReps: 5,
@@ -916,11 +916,11 @@ class StretchExercise {
         ),
         RoutineTier.sweatless: TierPrescription(
           targetSummary: '10 reps',
-          detailText: '10 alternating crossover touches',
+          detailText: '10 wide-stance crossover swings',
           steps: [
             ExercisePhaseStep(
-              title: 'Crossover Toe Touches',
-              instruction: 'Keep back leg straight and exhale as you fold down.',
+              title: 'Bending Crossover Toe Touches',
+              instruction: 'Keep legs spread wide and swing arms smoothly side to side.',
               motionCue: MotionCue.toeTouchAlternating,
               isRepBased: true,
               targetReps: 10,
@@ -930,11 +930,11 @@ class StretchExercise {
         ),
         RoutineTier.sweaty: TierPrescription(
           targetSummary: '20 reps',
-          detailText: '20 alternating crossover touches',
+          detailText: '20 wide-stance crossover swings',
           steps: [
             ExercisePhaseStep(
-              title: 'Crossover Toe Touches',
-              instruction: 'Alternate crossed foot every rep with smooth hip hinge.',
+              title: 'Bending Crossover Toe Touches',
+              instruction: 'Alternate touching opposite toes while opening your chest.',
               motionCue: MotionCue.toeTouchAlternating,
               isRepBased: true,
               targetReps: 20,
@@ -944,11 +944,11 @@ class StretchExercise {
         ),
         RoutineTier.intense: TierPrescription(
           targetSummary: '30 reps',
-          detailText: '30 alternating crossover touches',
+          detailText: '30 wide-stance crossover swings',
           steps: [
             ExercisePhaseStep(
-              title: 'Crossover Toe Touches',
-              instruction: 'Reach deeper toward toes each round while keeping rhythm.',
+              title: 'Bending Crossover Toe Touches',
+              instruction: 'Full windmill rotation every rep, reach high and touch low.',
               motionCue: MotionCue.toeTouchAlternating,
               isRepBased: true,
               targetReps: 30,
