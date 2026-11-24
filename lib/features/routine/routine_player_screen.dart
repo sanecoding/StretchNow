@@ -42,12 +42,14 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
   bool _manualRepMode = false;
 
   bool _isPaused = false;
+  bool _isExerciseComplete = false;
   bool _isFinished = false;
   bool _soundEnabled = true;
   bool _vibrationEnabled = true;
 
   double _totalActiveSeconds = 0;
   int _exercisesCompletedInRun = 0;
+  final Set<int> _completedIndicesInRun = {};
 
   @override
   void initState() {
@@ -65,6 +67,7 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
   }
 
   StretchExercise get _exercise => widget.exercises[_exerciseIndex];
+  bool get _hasNextExercise => _exerciseIndex + 1 < widget.exercises.length;
   TierPrescription get _prescription => _exercise.forTier(widget.tier);
   List<ExercisePhaseStep> get _steps => _prescription.steps;
   ExercisePhaseStep get _step => _steps[_stepIndex];
@@ -73,13 +76,14 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
     _stepIndex = 0;
     _stepElapsed = 0;
     _completedRepsInStep = 0;
+    _isExerciseComplete = false;
     _isInPrep = usePrep && _prepDuration > 0;
     _prepElapsed = 0;
     _lastTick = null;
   }
 
   void _onTick(Duration elapsed) {
-    if (_isPaused || _isFinished) {
+    if (_isPaused || _isExerciseComplete || _isFinished) {
       _lastTick = elapsed;
       return;
     }
@@ -111,9 +115,9 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
         _stepElapsed += dt;
         final repsNow = (_stepElapsed / _step.secondsPerRep).floor();
         if (repsNow > _completedRepsInStep) {
-          _completedRepsInStep = repsNow;
+          _completedRepsInStep = repsNow.clamp(0, _step.targetReps);
           if (_completedRepsInStep >= _step.targetReps) {
-            _advanceStepOrExercise();
+            _advanceStepOrCompleteExercise();
           } else {
             _playCue(strong: false);
           }
@@ -123,7 +127,8 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
       setState(() {
         _stepElapsed += dt;
         if (_stepElapsed >= _step.durationSeconds) {
-          _advanceStepOrExercise();
+          _stepElapsed = _step.durationSeconds.toDouble();
+          _advanceStepOrCompleteExercise();
         }
       });
     }
@@ -146,7 +151,16 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
     }
   }
 
-  void _advanceStepOrExercise() {
+  void _markCurrentExerciseDoneOnce() {
+    if (_completedIndicesInRun.add(_exerciseIndex)) {
+      _exercisesCompletedInRun++;
+      context.read<HomeViewModel>().markExerciseDone(_exercise.id);
+    }
+  }
+
+  /// Advances within multi-step exercises, or stops at exercise completion so
+  /// the user moves to the next exercise themselves.
+  void _advanceStepOrCompleteExercise() {
     if (_stepIndex + 1 < _steps.length) {
       _stepIndex++;
       _stepElapsed = 0;
@@ -154,16 +168,18 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
       _playCue(strong: true);
       return;
     }
-    _completeCurrentExercise();
+    _isExerciseComplete = true;
+    _lastTick = null;
+    _markCurrentExerciseDoneOnce();
+    _playCue(strong: true);
   }
 
-  void _completeCurrentExercise() {
-    final completedId = _exercise.id;
-    _exercisesCompletedInRun++;
-    context.read<HomeViewModel>().markExerciseDone(completedId);
-    _playCue(strong: true);
+  void _completeAndAdvance() {
+    final wasAlreadyComplete = _isExerciseComplete;
+    _markCurrentExerciseDoneOnce();
+    _playCue(strong: !wasAlreadyComplete);
 
-    if (_exerciseIndex + 1 < widget.exercises.length) {
+    if (_hasNextExercise) {
       setState(() {
         _exerciseIndex++;
         _initExercise(usePrep: _prepDuration > 0);
@@ -176,7 +192,7 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
   }
 
   void _skipCurrentExercise() {
-    if (_exerciseIndex + 1 < widget.exercises.length) {
+    if (_hasNextExercise) {
       setState(() {
         _exerciseIndex++;
         _initExercise(usePrep: _prepDuration > 0);
@@ -201,19 +217,28 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
     }
   }
 
+  void _repeatCurrentExercise() {
+    setState(() {
+      _isPaused = false;
+      _initExercise(usePrep: false);
+    });
+  }
+
   void _incrementManualRep() {
-    if (!_step.isRepBased) return;
+    if (!_step.isRepBased || _isExerciseComplete) return;
     _playCue(strong: false);
     setState(() {
-      _completedRepsInStep++;
+      _completedRepsInStep =
+          (_completedRepsInStep + 1).clamp(0, _step.targetReps);
       if (_completedRepsInStep >= _step.targetReps) {
-        _advanceStepOrExercise();
+        _advanceStepOrCompleteExercise();
       }
     });
   }
 
   double? _resolveExternalProgress() {
     if (_isInPrep) return null;
+    if (_isExerciseComplete) return 1.0;
     if (_step.isRepBased) {
       if (_manualRepMode) return null;
       return ((_stepElapsed % _step.secondsPerRep) / _step.secondsPerRep)
@@ -335,8 +360,9 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
                   child: Row(
                     children: List.generate(widget.exercises.length, (idx) {
-                      final done = idx < _exerciseIndex;
-                      final active = idx == _exerciseIndex;
+                      final done = idx < _exerciseIndex ||
+                          _completedIndicesInRun.contains(idx);
+                      final active = idx == _exerciseIndex && !done;
                       return Expanded(
                         child: Container(
                           height: 4.5,
@@ -512,8 +538,10 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
     Color tierColor,
   ) {
     final step = _step;
-    final activeAccent =
-        step.isRest ? const Color(0xFF14B8A6) : tierColor;
+    const completeColor = Color(0xFF22C55E);
+    final activeAccent = _isExerciseComplete
+        ? completeColor
+        : (step.isRest ? const Color(0xFF14B8A6) : tierColor);
 
     final double ringProgress;
     final String primaryCounter;
@@ -522,16 +550,18 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
     if (step.isRepBased) {
       final total = step.targetReps.clamp(1, 100);
       final doneReps = _completedRepsInStep.clamp(0, total);
-      final fracRep = _manualRepMode
+      final fracRep = (_manualRepMode || _isExerciseComplete)
           ? 0.0
           : ((_stepElapsed / step.secondsPerRep) - doneReps).clamp(0.0, 1.0);
-      ringProgress = ((doneReps + fracRep) / total).clamp(0.0, 1.0);
+      ringProgress =
+          _isExerciseComplete ? 1.0 : ((doneReps + fracRep) / total).clamp(0.0, 1.0);
       primaryCounter = '$doneReps/$total';
       counterSubLabel = _manualRepMode ? 'tap per rep' : 'auto-paced reps';
     } else {
       final total = step.durationSeconds.clamp(1, 300);
       final remaining = (total - _stepElapsed).ceil().clamp(0, total);
-      ringProgress = ((total - _stepElapsed) / total).clamp(0.0, 1.0);
+      ringProgress =
+          _isExerciseComplete ? 1.0 : ((total - _stepElapsed) / total).clamp(0.0, 1.0);
       primaryCounter = '${remaining}s';
       counterSubLabel = step.isRest ? 'rest & breathe' : 'hold / flow';
     }
@@ -595,14 +625,15 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
         ExerciseMotionPlayer(
           exercise: _exercise,
           cueOverride: step.motionCue,
-          isPlaying: !_isPaused,
+          isPlaying: !_isPaused && !_isExerciseComplete,
           isPreview: false,
           cycleDurationSeconds:
               step.isRepBased ? step.secondsPerRep : _exercise.previewCycleSeconds,
           externalProgress: _resolveExternalProgress(),
           primaryColor: activeAccent,
           height: 205,
-          phaseBadgeText: step.title.toUpperCase(),
+          phaseBadgeText:
+              _isExerciseComplete ? 'COMPLETE' : step.title.toUpperCase(),
         ),
 
         // Sub-step indicator strip if multiple steps (Y-T-W, Neck rounds, Hollow sets, etc.)
@@ -610,8 +641,8 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
           const SizedBox(height: 10),
           Row(
             children: List.generate(_steps.length, (i) {
-              final isDone = i < _stepIndex;
-              final isCurrent = i == _stepIndex;
+              final isDone = _isExerciseComplete || i < _stepIndex;
+              final isCurrent = !_isExerciseComplete && i == _stepIndex;
               return Expanded(
                 child: Container(
                   height: 5,
@@ -636,10 +667,14 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+            color: _isExerciseComplete
+                ? completeColor.withValues(alpha: 0.08)
+                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+              color: _isExerciseComplete
+                  ? completeColor.withValues(alpha: 0.45)
+                  : colorScheme.outlineVariant.withValues(alpha: 0.35),
             ),
           ),
           child: Row(
@@ -658,26 +693,46 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
                       valueColor: AlwaysStoppedAnimation<Color>(activeAccent),
                     ),
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        primaryCounter,
-                        style: GoogleFonts.jetBrainsMono(
-                          fontSize: step.isRepBased ? 18 : 22,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
+                  if (_isExerciseComplete)
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.check_rounded,
+                          color: completeColor,
+                          size: 28,
                         ),
-                      ),
-                      Text(
-                        counterSubLabel,
-                        style: TextStyle(
-                          fontSize: 9.5,
-                          color: colorScheme.onSurfaceVariant,
+                        Text(
+                          'DONE',
+                          style: GoogleFonts.jetBrainsMono(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            color: completeColor,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    )
+                  else
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          primaryCounter,
+                          style: GoogleFonts.jetBrainsMono(
+                            fontSize: step.isRepBased ? 18 : 22,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                        Text(
+                          counterSubLabel,
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
                 ],
               ),
               const SizedBox(width: 14),
@@ -686,7 +741,11 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      step.title,
+                      _isExerciseComplete
+                          ? (_hasNextExercise
+                              ? 'Move Complete!'
+                              : 'Final Move Complete!')
+                          : step.title,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: activeAccent,
@@ -694,13 +753,17 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      step.instruction,
+                      _isExerciseComplete
+                          ? (_hasNextExercise
+                              ? 'Take a breather, then tap Next Exercise when ready.'
+                              : 'Great job! Tap Finish below to wrap up your routine.')
+                          : step.instruction,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                         height: 1.35,
                       ),
                     ),
-                    if (step.isRepBased) ...[
+                    if (step.isRepBased && !_isExerciseComplete) ...[
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 6,
@@ -748,58 +811,159 @@ class _RoutinePlayerScreenState extends State<RoutinePlayerScreen>
           ),
         ),
 
+        if (_isExerciseComplete && _hasNextExercise) ...[
+          const SizedBox(height: 10),
+          Builder(
+            builder: (context) {
+              final nextEx = widget.exercises[_exerciseIndex + 1];
+              final nextPresc = nextEx.forTier(widget.tier);
+              return Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: tierColor.withValues(alpha: 0.25),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: tierColor,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'UP NEXT · #${nextEx.number}',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.8,
+                              color: tierColor,
+                            ),
+                          ),
+                          Text(
+                            '${nextEx.name} · ${nextPresc.targetSummary}',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.onSurface,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+
         const SizedBox(height: 14),
 
         // Transport Controls
-        Row(
-          children: [
-            IconButton.outlined(
-              onPressed: _goPreviousExercise,
-              icon: const Icon(Icons.skip_previous_rounded),
-              tooltip: 'Previous exercise',
-              padding: const EdgeInsets.all(14),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: FilledButton.tonalIcon(
-                onPressed: () {
-                  setState(() {
-                    _isPaused = !_isPaused;
-                  });
-                },
-                icon: Icon(
-                  _isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                ),
-                label: Text(_isPaused ? 'Resume' : 'Pause'),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
+        if (_isExerciseComplete)
+          Row(
+            children: [
+              IconButton.outlined(
+                onPressed: _goPreviousExercise,
+                icon: const Icon(Icons.skip_previous_rounded),
+                tooltip: 'Previous exercise',
+                padding: const EdgeInsets.all(14),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _repeatCurrentExercise,
+                  icon: const Icon(Icons.replay_rounded, size: 18),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Repeat'),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: _completeCurrentExercise,
-                icon: const Icon(Icons.check_rounded),
-                label: Text(
-                  _exerciseIndex + 1 == widget.exercises.length
-                      ? 'Finish'
-                      : 'Done',
-                ),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  backgroundColor: activeAccent,
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 2,
+                child: FilledButton.icon(
+                  onPressed: _completeAndAdvance,
+                  icon: Icon(
+                    _hasNextExercise
+                        ? Icons.arrow_forward_rounded
+                        : Icons.check_rounded,
+                  ),
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      _hasNextExercise ? 'Next Exercise' : 'Finish',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    backgroundColor: completeColor,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 6),
-            IconButton(
-              onPressed: _skipCurrentExercise,
-              icon: const Icon(Icons.skip_next_rounded),
-              tooltip: 'Skip exercise',
-            ),
-          ],
-        ),
+            ],
+          )
+        else
+          Row(
+            children: [
+              IconButton.outlined(
+                onPressed: _goPreviousExercise,
+                icon: const Icon(Icons.skip_previous_rounded),
+                tooltip: 'Previous exercise',
+                padding: const EdgeInsets.all(14),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FilledButton.tonalIcon(
+                  onPressed: () {
+                    setState(() {
+                      _isPaused = !_isPaused;
+                    });
+                  },
+                  icon: Icon(
+                    _isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                  ),
+                  label: Text(_isPaused ? 'Resume' : 'Pause'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: _completeAndAdvance,
+                  icon: const Icon(Icons.check_rounded),
+                  label: Text(_hasNextExercise ? 'Done' : 'Finish'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    backgroundColor: activeAccent,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              IconButton(
+                onPressed: _skipCurrentExercise,
+                icon: const Icon(Icons.skip_next_rounded),
+                tooltip: 'Skip exercise',
+              ),
+            ],
+          ),
       ],
     );
   }

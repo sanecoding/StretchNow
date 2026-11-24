@@ -291,4 +291,103 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'RoutinePlayerScreen waits for user to advance after timer or rep completion',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final storage = StorageService.inMemory({}, {'routine_prep_seconds': '0'});
+      final homeVm = HomeViewModel(storage);
+      final twist = StretchExercise.findById('spinal_twist')!;
+      final bridge = StretchExercise.findById('hamstring_bridge')!;
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: homeVm,
+          child: MaterialApp(
+            home: RoutinePlayerScreen(
+              exercises: [twist, bridge],
+              initialIndex: 0,
+              tier: RoutineTier.halfway,
+              sessionTitle: 'Manual Advance Test',
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Exercise 1 of 2 · Floor Block'), findsOneWidget);
+      expect(find.text('Left Side Twist'), findsOneWidget);
+
+      // First step finishes -> advances internally within Exercise 1 to Right Side
+      for (var i = 0; i < 105; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text('Exercise 1 of 2 · Floor Block'), findsOneWidget);
+      expect(find.text('Right Side Twist'), findsOneWidget);
+
+      // Final step finishes -> stays on Exercise 1 until user taps Next Exercise
+      for (var i = 0; i < 120; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text('Exercise 1 of 2 · Floor Block'), findsOneWidget);
+      expect(find.text('Move Complete!'), findsOneWidget);
+      expect(find.text('UP NEXT · #2'), findsOneWidget);
+      expect(find.text('Hamstring Bridge · 5 reps'), findsOneWidget);
+      expect(find.text('Next Exercise'), findsOneWidget);
+      expect(homeVm.completedExerciseCount, 1);
+
+      // Waiting extra time never auto-advances to Exercise 2
+      for (var i = 0; i < 50; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text('Exercise 1 of 2 · Floor Block'), findsOneWidget);
+      expect(find.text('Move Complete!'), findsOneWidget);
+
+      // Repeat restarts the current exercise cleanly without duplicate completion count
+      await tester.ensureVisible(find.text('Repeat'));
+      await tester.pump();
+      await tester.tap(find.text('Repeat'));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('Left Side Twist'), findsOneWidget);
+
+      for (var i = 0; i < 220; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text('Move Complete!'), findsOneWidget);
+      expect(homeVm.completedExerciseCount, 1);
+
+      // User explicitly taps Next Exercise to move to Exercise 2
+      await tester.ensureVisible(find.text('Next Exercise'));
+      await tester.pump();
+      await tester.tap(find.text('Next Exercise'));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('Exercise 2 of 2 · Floor Block'), findsOneWidget);
+      expect(find.text('Hamstring Bridge'), findsOneWidget);
+
+      // Complete all 5 manual reps -> stays on final move until user taps Finish
+      await tester.tap(find.text('Auto-Paced'));
+      await tester.pump(const Duration(milliseconds: 80));
+      for (var rep = 0; rep < 5; rep++) {
+        await tester.tap(find.text('Rep Done'));
+        await tester.pump(const Duration(milliseconds: 60));
+      }
+      expect(find.text('Final Move Complete!'), findsOneWidget);
+      expect(find.text('Finish'), findsOneWidget);
+      expect(find.text('Routine Complete!'), findsNothing);
+      expect(homeVm.completedExerciseCount, 2);
+
+      await tester.ensureVisible(find.text('Finish'));
+      await tester.pump();
+      await tester.tap(find.text('Finish'));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('Routine Complete!'), findsOneWidget);
+
+      homeVm.dispose();
+    },
+  );
 }
